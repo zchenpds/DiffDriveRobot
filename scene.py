@@ -9,6 +9,7 @@ import cv2
 import numpy as np
 from robot import Robot
 import matplotlib.pyplot as plt
+import vrep
 
 class Scene():
     def __init__(self):
@@ -23,14 +24,18 @@ class Scene():
         # For visualization
         self.wPix = 600
         self.hPix = 600
-        self.xMax = 15
-        self.yMax = 15
+        self.xMax = 5
+        self.yMax = 5
         self.image = np.zeros((self.hPix, self.wPix, 3), np.uint8)
         
         self.robots = []
         self.adjMatrix = None
         self.Laplacian = None
          
+        # vrep related
+        self.vrepConnected = False
+        #self.vrepSimStarted = False
+        
     def addRobot(self, arg, dynamics):
         robot = Robot(self)
         robot.index = len(self.robots)
@@ -52,8 +57,46 @@ class Scene():
         self.adjMatrix = adjMatrix
         self.Laplacian = np.diag(np.sum(self.adjMatrix, axis = 1))
     
-        
+    def initVrep(self):
+        print ('Program started')
+        vrep.simxFinish(-1) # just in case, close all opened connections
+        self.clientID = vrep.simxStart('127.0.0.1',19997,True,True,5000,5) # Connect to V-REP
+        if self.clientID!=-1:
+            self.vrepConnected = True
+            print('Connected to remote API server')
+             # enable the synchronous mode on the client:
+            vrep.simxSynchronous(self.clientID, True)
+            # start the simulation:
+            vrep.simxStartSimulation(self.clientID, vrep.simx_opmode_blocking)
+        else:
+            self.vrepConnected = False
+            print ('Failed connecting to remote API server')
+            raise
+        self.dt = 0.05
+    
+    def setVrepHandles(self, robotIndex, handleNames, handleNameSuffix = ""):
+        if self.vrepConnected == False:
+            return False
+        res, robotHandle = vrep.simxGetObjectHandle(
+                self.clientID, handleNames[0] + handleNameSuffix, 
+                vrep.simx_opmode_oneshot_wait)
+        res, motorLeftHandle = vrep.simxGetObjectHandle(
+                self.clientID, handleNames[1] + handleNameSuffix, 
+                vrep.simx_opmode_oneshot_wait)
+        res, motorRightHandle = vrep.simxGetObjectHandle(
+                self.clientID, handleNames[2] + handleNameSuffix, 
+                vrep.simx_opmode_oneshot_wait)
+        self.robots[robotIndex].robotHandle = robotHandle
+        self.robots[robotIndex].motorLeftHandle = motorLeftHandle
+        self.robots[robotIndex].motorRightHandle = motorRightHandle
+        #print(self.robots[robotIndex].robotHandle)
     def simulate(self):
+        # vrep related
+        '''
+        cmd = input('Press <enter> key to step the simulation!')
+        if cmd == 'q': # quit
+            return False
+        '''
         self.t += self.dt
         self.ts.append(self.t)
         countReachedGoal = 0
@@ -64,6 +107,8 @@ class Scene():
             robot.propagate()
             if robot.reachedGoal:
                 countReachedGoal += 1
+        if self.vrepConnected:
+            vrep.simxSynchronousTrigger(self.clientID);
         if countReachedGoal == len(self.robots):
             return False
         else:
@@ -112,7 +157,7 @@ class Scene():
                 plt.ylabel('y_i - y_di (m)')
                 plt.show()
                 self.ploted[type] = True
-        elif type == 2:
+        elif type == 2: #???
             for i in range(len(self.robots)):
                 x = self.robots[i].xi.x - self.robots[i].xid.x
                 self.ydict[type][i].append(x)
@@ -143,7 +188,18 @@ class Scene():
     
     def deallocate(self):
         cv2.destroyAllWindows() # Add this to fix the window freezing bug
-    
+        
+        # vrep related
+        if self.vrepConnected:
+            self.vrepConnected = False
+            # Before closing the connection to V-REP, make sure that the last command sent out had time to arrive. You can guarantee this with (for example):
+            #vrep.simxGetPingTime(self.clientID)
+            # Stop simulation:
+            vrep.simxStopSimulation(self.clientID, vrep.simx_opmode_blocking)
+            # Now close the connection to V-REP:
+            vrep.simxFinish(self.clientID)
+            
+            
     
     
     

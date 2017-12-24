@@ -22,18 +22,7 @@ class State():
         if self.robot == None:
             sys.exit("State: attribute robot is None")
         dt = self.robot.scene.dt
-        if self.robot.dynamics <= 5:
-            vx, vy = control()
-            self.x += vx * dt
-            self.y += vy * dt
-            self.theta = 0
-        elif self.robot.dynamics >= 5 and self.robot.dynamics < 10:
-            vel, omega = control()
-            self.x += vel * math.cos(self.theta) * dt
-            self.y += vel * math.sin(self.theta) * dt
-            self.theta += omega * dt
-            print('omega: ' + str(omega))
-        elif self.robot.dynamics >= 10:
+        if self.robot.dynamics >= 10:
             l = self.robot.l
             v1, v2 = control()
             self.x += math.cos(self.theta) * dt / 2 * (v1 + v2)
