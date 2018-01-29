@@ -10,6 +10,8 @@ from scene import Scene
 from robot import Robot
 import numpy as np
 
+
+
 try:
     sc = Scene()
     dynamics = 11
@@ -20,21 +22,45 @@ try:
     sc.setADjMatrix(np.uint8([[0, 1, 1], [1, 0, 1], [1, 1, 0]]))
     # vrep related
     sc.initVrep()
-    objectNames = ['Pioneer_p3dx', 'Pioneer_p3dx_leftMotor', 'Pioneer_p3dx_rightMotor']
-    sc.setVrepHandles(0, objectNames)
-    sc.setVrepHandles(1, objectNames, '#0')
-    sc.setVrepHandles(2, objectNames, '#1')
+    # Choose sensor type
+    sc.SENSOR_TYPE = "VPL16" # None, 2d, VPL16, kinect
+    sc.objectNames = ['Pioneer_p3dx', 'Pioneer_p3dx_leftMotor', 'Pioneer_p3dx_rightMotor']
+    
+    if sc.SENSOR_TYPE == "None":
+        pass
+    elif sc.SENSOR_TYPE == "2d":
+        sc.objectNames.append('LaserScanner_2D_front')
+        sc.objectNames.append('LaserScanner_2D_rear')
+        sc.setVrepHandles(0, '')
+        sc.setVrepHandles(1, '#0')
+        sc.setVrepHandles(2, '#1')
+    elif sc.SENSOR_TYPE == "VPL16":
+        sc.objectNames.append('velodyneVPL_16') # _ptCloud
+        sc.setVrepHandles(0, '')
+        sc.setVrepHandles(1, '#0')
+        sc.setVrepHandles(2, '#1')
+    elif sc.SENSOR_TYPE == "kinect":
+        sc.objectNames.append('kinect_depth')
+        sc.objectNames.append('kinect_rgb')
+        sc.setVrepHandles(0, '')
+        sc.setVrepHandles(1, '#0')
+        sc.setVrepHandles(2, '#1')
     
     #sc.renderScene(waitTime = 3000)
-    tf = 10
+    tf = 15
+    sc.plot(3, tf)
     while sc.simulate():
-        sc.renderScene(waitTime = int(sc.dt * 1000))
+        #sc.renderScene(waitTime = int(sc.dt * 1000))
+        sc.showOccupancyMap(waitTime = int(sc.dt * 1000))
+        
         print("---------------------")
         print("t = %.3f" % sc.t, "s")
         
-        sc.plot(0, tf)
-        #sc.plot(2, tf)
+        #sc.plot(0, tf)
+        sc.plot(2, tf)
         #sc.plot(1, tf) 
+        sc.plot(3, tf)
+        
         if sc.t > tf:
             break
     
