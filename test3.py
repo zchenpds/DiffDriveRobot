@@ -25,7 +25,7 @@ def generateData():
         # sc.setADjMatrix(np.uint8([[0, 0, 0], [1, 0, 1], [1, 1, 0]]))
         
         # vrep related
-        # sc.initVrep()
+        sc.initVrep()
         # Choose sensor type
         sc.SENSOR_TYPE = "VPL16" # None, 2d, VPL16, kinect
         sc.objectNames = ['Pioneer_p3dx', 'Pioneer_p3dx_leftMotor', 'Pioneer_p3dx_rightMotor']
@@ -53,9 +53,9 @@ def generateData():
         #sc.renderScene(waitTime = 3000)
         tf = 10
         sc.resetPosition()
-        sc.plot(3, tf)
+        #sc.plot(3, tf)
         while sc.simulate():
-            sc.renderScene(waitTime = int(sc.dt * 1000))
+            #sc.renderScene(waitTime = int(sc.dt * 1000))
             #sc.showOccupancyMap(waitTime = int(sc.dt * 1000))
             
             #print("---------------------")
@@ -99,7 +99,7 @@ def generateData():
     else:
         return None
 # main
-numRun = 20
+numRun = 100
 dataList = []
 
 # First episode
