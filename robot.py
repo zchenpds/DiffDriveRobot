@@ -10,6 +10,7 @@ from state import State
 import numpy as np
 import cv2
 import vrep
+from data import Data
 
 class Robot():
     def __init__(self, scene):
@@ -37,6 +38,10 @@ class Robot():
         self.xMax = 5
         self.yMax = 5
         self.occupancyMap = np.ones((self.hPix, self.wPix), np.uint8) * 255
+        
+        # Data to be recorded
+        self.recordData = False
+        self.data = Data(self)
 
     def propagateDesired(self):
         if self.dynamics == 4 or self.dynamics == 11:
@@ -96,7 +101,7 @@ class Robot():
             K1 = 1
             K2 = 1
             #K3 = 1
-            K4 = 0.5
+            K4 = 1.0
             
             # velocity in transformed space
             vxp = 0
@@ -142,6 +147,22 @@ class Robot():
             v1 = alpha * v1
             v2 = alpha * v2
             
+            # Record data
+            if (self.scene.vrepConnected and 
+                self.scene.SENSOR_TYPE == "VPL16" and 
+                self.VPL16_counter == 3 and self.recordData == True):
+                if len(self.data.epi_starts) == 0:
+                    self.data.epi_starts = np.append(self.data.epi_starts, True)
+                else:
+                    self.data.epi_starts = np.append(self.data.epi_starts, False)
+                self.data.observations = np.append(self.data.observations, 
+                                      np.expand_dims(self.occupancyMap.flatten(), axis = 0), 
+                                      axis = 0)
+                self.data.obs2 = np.append(self.data.obs2, [[self.xi.x, self.xi.y, self.xi.theta]], axis = 0)
+                self.data.actions = np.append(self.data.actions, [[v1, v2]], axis = 0)
+                
+            # print('v = ', pow(pow(v1, 2) + pow(v2, 2), 0.5))
+            
             if self.scene.vrepConnected:
                 omega1 = v1 * 10
                 omega2 = v2 * 10
@@ -178,8 +199,7 @@ class Robot():
     
     def setPosition(self, stateVector = None):
         # stateVector = [x, y, theta]
-        if self.scene.vrepConnected == False:
-            return
+        
         z0 = 0.1587
         if stateVector == None:
             x0 = self.xi.x
@@ -189,7 +209,13 @@ class Robot():
             x0 = stateVector[0]
             y0 = stateVector[1]
             theta0 = stateVector[2]
-            
+            self.xi.x = x0
+            self.xi.y = y0
+            self.xi.theta = theta0
+        else:
+            raise Exception('Argument error!')
+        if self.scene.vrepConnected == False:
+            return
         vrep.simxSetObjectPosition(self.scene.clientID, self.robotHandle, -1, 
                 [x0, y0, z0], vrep.simx_opmode_oneshot)
         vrep.simxSetObjectOrientation(self.scene.clientID, self.robotHandle, -1, 
@@ -290,7 +316,7 @@ class Robot():
                     self.scene.clientID, self.pointCloudName, 1, 
                     'getVelodyneData_function', [], [], [], 'abc', 
                     vrep.simx_opmode_blocking)
-            print(len(velodyne_points[2]))
+            #print(len(velodyne_points[2]))
             #print(velodyne_points[2])
             
             # Parse data
@@ -302,7 +328,7 @@ class Robot():
             if self.VPL16_counter == 0:
                 # Reset point cloud and occupancy map
                 self.pointCloud = np.zeros((0, 2), np.float32)
-            print('VPL16_counter = ', self.VPL16_counter)
+            #print('VPL16_counter = ', self.VPL16_counter)
             for i in range(0, len(velodyne_points[2]), 3):
                 x = velodyne_points[2][i]
                 z = velodyne_points[2][i + 1]
@@ -323,6 +349,7 @@ class Robot():
                 pointCloudPix = self.m2pix(self.pointCloud)
                 for i in range(pointCloudPix.shape[0]):
                     self.occupancyMap[(pointCloudPix[i, 0], pointCloudPix[i, 1])] = 0
+             
             self.VPL16_counter += 1
             
         elif self.scene.SENSOR_TYPE == "kinect":

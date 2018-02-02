@@ -14,7 +14,7 @@ import math
 import random
 
 class Scene():
-    def __init__(self):
+    def __init__(self, recordData = False):
         self.t = 0
         self.dt = 0.01
         
@@ -40,6 +40,8 @@ class Scene():
         #self.vrepSimStarted = False
         self.SENSOR_TYPE = "None"
         self.objectNames = []
+        self.recordData = recordData
+        
     def addRobot(self, arg, dynamics):
         robot = Robot(self)
         robot.index = len(self.robots)
@@ -54,6 +56,10 @@ class Scene():
         robot.xid0.y = arg[1, 1]
         robot.xid0.theta = arg[1, 2]
         robot.dynamics = dynamics
+        if robot.index == 0:
+            robot.recordData = False
+        else:
+            robot.recordData = self.recordData
         
         self.robots.append(robot)
     
@@ -139,27 +145,34 @@ class Scene():
         self.robots[robotIndex].readSensorData()
         
     def resetPosition(self):
-        boundaryFactor = 0.4
+        boundaryFactor = 0.5
+        MIN_DISTANCE = 1
         if self.robots[0].dynamics == 12:
-            # Generate random robot potiions whose center is at the origin
-            alpha0 = (2/3 * random.random() + 1/6) * math.pi
-            rho0 = boundaryFactor * self.xMax * random.random()
-            x0 = rho0 * math.cos(alpha0)
-            y0 = rho0 * math.sin(alpha0)
-            theta0 = 2 * math.pi * random.random()
-            self.robots[0].setPosition([x0, y0, theta0])
             
-            alpha1 = (2/3 * random.random() - 1/2) * math.pi
-            rho1 = boundaryFactor * self.xMax * random.random()
-            x1 = rho1 * math.cos(alpha1)
-            y1 = rho1 * math.sin(alpha1)
-            theta1 = 2 * math.pi * random.random()
-            self.robots[1].setPosition([x1, y1, theta1])
+            self.robots[0].setPosition([0, 2/2, 0])
             
-            x2 = -x0 - x1
-            y2 = -y0 - y1
-            theta2 = 2 * math.pi * random.random()
-            self.robots[2].setPosition([x2, y2, theta2])
+            for i in range(1, len(self.robots)):
+                while True:
+                    minDij = 100
+                    alpha1 = 2 * math.pi * random.random()
+                    rho1 = boundaryFactor * self.xMax * random.random()
+                    x1 = rho1 * math.cos(alpha1)
+                    y1 = rho1 * math.sin(alpha1)
+                    theta1 = 2 * math.pi * random.random()
+                    for j in range(0, i):
+                        dij = pow( pow(x1 - self.robots[j].xi.x, 2) + 
+                                   pow(y1 - self.robots[j].xi.y, 2), 0.5)
+                        # print('j = ', j, '( %.3f' % self.robots[j].xi.x, ', %.3f'%self.robots[j].xi.y, '), ', 'dij = ', dij)
+                        if dij < minDij:
+                            minDij = dij # find the smallest dij for all j
+                    print('Min distance: ', minDij, 'from robot #', i, 'to other robots.')
+                    
+                    # if the smallest dij is greater than allowed,
+                    if minDij >= MIN_DISTANCE:
+                        self.robots[i].setPosition([x1, y1, theta1])
+                        break # i++
+        #input('One moment.')
+        # End of resetPosition()
         
         
     def simulate(self):
@@ -278,25 +291,32 @@ class Scene():
         elif type == 2: # Formation Error
             k = 0
             for i in range(len(self.robots)):
-                for j in range(i + 1, len(self.robots)):
+                for j in range(0, i):
                     if self.adjMatrix[i, j] != 0:
                         # If this is the first time this type of plot is drawn
-                        if type not in self.ydict[type].keys():
+                        if k not in self.ydict[type].keys():
                             self.ydict[type][k] = []
-                            #print('i = ', i, 'j = ', j)
+                            # print(self.ydict[type].keys())
+                            # print('i = ', i, 'j = ', j)
                         xi = self.robots[i].xi.x
                         xj = self.robots[j].xi.x
                         yi = self.robots[i].xi.y
                         yj = self.robots[j].xi.y
-                        d = pow(pow(xi - xj, 2) + pow(yi - yj, 2), 0.5)
+                        d = pow(pow(xi - xj, 2) + pow(yi - yj, 2), 0.5) - 1.732
                         self.ydict[type][k].append(d)
+                        #print(self.ydict[type][k])
                         k += 1
             if self.t > tf:
                 plt.figure(type)
                 for k in range(len(self.ydict[type])):
-                    plt.plot(self.ts, self.ydict[type][k], '-')
+                    try:
+                        plt.plot(self.ts, self.ydict[type][k], '-')
+                    except:
+                        print(k)
+                        print(len(self.ts))
+                        print(len(self.ydict[type]))
                 plt.xlabel('t (s)')
-                plt.ylabel('d_ij (m)')
+                plt.ylabel('d_ij - d* (m)')
                 plt.show()
                 self.ploted[type] = True
                 
