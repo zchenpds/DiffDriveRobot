@@ -113,11 +113,11 @@ for i in range(1, numRun):
     print('Run #: ', i, '...')
     sc = generateData()
     if sc != None:
-        for i in range(len(sc.robots)):
-            dataList[i].append(sc.robots[i].data)
+        for j in range(len(sc.robots)):
+            dataList[j].append(sc.robots[j].data)
 
-for i in range(len(sc.robots)):
-    dataList[i].store()
+for j in range(len(sc.robots)):
+    dataList[j].store()
 
 
 
