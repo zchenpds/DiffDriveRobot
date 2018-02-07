@@ -7,14 +7,14 @@ This test file is dependent on vrep.
 """
 
 from scene import Scene
-from robot import Robot
+# from robot import Robot
 import numpy as np
-from data import Data
+# from data import Data
 
 def generateData():
     sc = Scene(recordData = True)
     try:
-        dynamics = 12
+        dynamics = 11
         sc.addRobot(np.float32([[-2, 0, 0], [0, 2/2, 0]]), dynamics)
         sc.addRobot(np.float32([[1, 3, 0], [1.732/2, -1/2, 0]]), dynamics)
         sc.addRobot(np.float32([[0, 0, 0], [-1.732/2, -1/2, 0]]), dynamics)
@@ -53,10 +53,10 @@ def generateData():
         #sc.renderScene(waitTime = 3000)
         tf = 10
         sc.resetPosition()
-        #sc.plot(3, tf)
+        sc.plot(3, tf)
         while sc.simulate():
             #sc.renderScene(waitTime = int(sc.dt * 1000))
-            #sc.showOccupancyMap(waitTime = int(sc.dt * 1000))
+            sc.showOccupancyMap(waitTime = int(sc.dt * 1000))
             
             #print("---------------------")
             #print("t = %.3f" % sc.t, "s")
@@ -65,7 +65,9 @@ def generateData():
             sc.plot(2, tf)
             #sc.plot(1, tf) 
             sc.plot(3, tf)
-            
+            sc.plot(4, tf)
+            sc.plot(5, tf)
+            #sc.plot(6, tf)
             if sc.t > tf:
                 break
                 
@@ -102,19 +104,22 @@ def generateData():
 numRun = 100
 dataList = []
 
-# First episode
-sc = generateData()
-if sc != None:
-    for robot in sc.robots:
-        dataList.append(robot.data)
 
-# The following episode
-for i in range(1, numRun):
+
+
+for i in range(0, numRun):
     print('Run #: ', i, '...')
+    # First episode
     sc = generateData()
     if sc != None:
-        for j in range(len(sc.robots)):
-            dataList[j].append(sc.robots[j].data)
+        # if the list is empty
+        if not dataList:
+            for robot in sc.robots:
+                dataList.append(robot.data)
+        else:
+            for j in range(len(sc.robots)):
+                dataList[j].append(sc.robots[j].data)
+        
 
 for j in range(len(sc.robots)):
     dataList[j].store()

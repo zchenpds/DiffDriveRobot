@@ -22,6 +22,7 @@ class Scene():
         self.ts = [] # timestamps
         self.tss = [] # timestamps (sparse)
         self.ydict = dict()
+        self.ydict2 = dict()
         self.ploted = dict()
         
         # For visualization
@@ -42,7 +43,7 @@ class Scene():
         self.objectNames = []
         self.recordData = recordData
         
-    def addRobot(self, arg, dynamics):
+    def addRobot(self, arg, dynamics, arg2 = np.float32([.5, .5])):
         robot = Robot(self)
         robot.index = len(self.robots)
         
@@ -56,6 +57,10 @@ class Scene():
         robot.xid0.y = arg[1, 1]
         robot.xid0.theta = arg[1, 2]
         robot.dynamics = dynamics
+        
+        if dynamics == 20:
+            robot.arg2 = arg2
+        
         if robot.index == 0:
             robot.recordData = False
         else:
@@ -91,15 +96,17 @@ class Scene():
         if self.vrepConnected == False:
             return False
         handleNames = self.objectNames
-        res, robotHandle = vrep.simxGetObjectHandle(
+        res1, robotHandle = vrep.simxGetObjectHandle(
                 self.clientID, handleNames[0] + handleNameSuffix, 
                 vrep.simx_opmode_oneshot_wait)
-        res, motorLeftHandle = vrep.simxGetObjectHandle(
+        
+        res2, motorLeftHandle = vrep.simxGetObjectHandle(
                 self.clientID, handleNames[1] + handleNameSuffix, 
                 vrep.simx_opmode_oneshot_wait)
-        res, motorRightHandle = vrep.simxGetObjectHandle(
+        res3, motorRightHandle = vrep.simxGetObjectHandle(
                 self.clientID, handleNames[2] + handleNameSuffix, 
                 vrep.simx_opmode_oneshot_wait)
+        print("Vrep res: ", res1, res2, res3)
         self.robots[robotIndex].robotHandle = robotHandle
         self.robots[robotIndex].motorLeftHandle = motorLeftHandle
         self.robots[robotIndex].motorRightHandle = motorRightHandle
@@ -147,10 +154,30 @@ class Scene():
     def resetPosition(self):
         boundaryFactor = 0.5
         MIN_DISTANCE = 1
-        if self.robots[0].dynamics == 12:
-            
+        if self.robots[0].dynamics == 11:
+            for i in range(0, len(self.robots)):
+                while True:
+                    minDij = 100
+                    alpha1 = 2 * math.pi * random.random()
+                    rho1 = boundaryFactor * self.xMax * random.random()
+                    x1 = rho1 * math.cos(alpha1)
+                    y1 = rho1 * math.sin(alpha1)
+                    theta1 = 2 * math.pi * random.random()
+                    for j in range(0, i):
+                        dij = pow( pow(x1 - self.robots[j].xi.x, 2) + 
+                                   pow(y1 - self.robots[j].xi.y, 2), 0.5)
+                        # print('j = ', j, '( %.3f' % self.robots[j].xi.x, ', %.3f'%self.robots[j].xi.y, '), ', 'dij = ', dij)
+                        if dij < minDij:
+                            minDij = dij # find the smallest dij for all j
+                    print('Min distance: ', minDij, 'from robot #', i, 'to other robots.')
+                    
+                    # if the smallest dij is greater than allowed,
+                    if i==0 or minDij >= MIN_DISTANCE:
+                        self.robots[i].setPosition([x1, y1, theta1])
+                        break # i++
+                        
+        elif self.robots[0].dynamics == 12:
             self.robots[0].setPosition([0, 2/2, 0])
-            
             for i in range(1, len(self.robots)):
                 while True:
                     minDij = 100
@@ -229,14 +256,15 @@ class Scene():
         cv2.waitKey(waitTime)
         
     def showOccupancyMap(self, waitTime = 25):
-        wPix = self.robots[0].wPix
-        hPix = self.robots[0].hPix
+        pc = self.robots[0].pointCloud
+        wPix = pc.wPix
+        hPix = pc.hPix
         N = len(self.robots)
         self.occupancyMap = np.ones((hPix, (wPix+1) * N), np.uint8) * 255
         x0 = 0
         for robot in self.robots:
             x1 = x0 + wPix
-            self.occupancyMap[:, x0:x1] = robot.occupancyMap
+            self.occupancyMap[:, x0:x1] = robot.pointCloud.occupancyMap
             self.occupancyMap[:, x1:(x1+1)] = np.zeros((hPix, 1), np.uint8)
             x0 += wPix + 1
         #print('self.occupancyMap shape: ', self.occupancyMap.shape)
@@ -249,15 +277,21 @@ class Scene():
         cv2.waitKey(waitTime)
         
     def plot(self, type = 0, tf = 3):
+        # type 0: (t, x_i - x_id)
+        # type 1: (t, y_i - y_id)
+        # type 2: (t, e_i - e_id) (formation error)
+        # type 3: (x_i, y_i)
+        # type 4: (t, v1)
         # If this is the first time this type of plot is drawn, initialize
         if type not in self.ydict.keys():
             self.ydict[type] = dict()
+            self.ydict2[type] = dict() # for type 3 figure only
             self.ploted[type] = False 
             if type == 0 or type == 1:
                 for i in range(len(self.robots)):
                     self.ydict[type][i] = []
             
-        if self.ploted[type]:
+        if self.ploted[type] and type != 6:
             return # This type of plot is completed
         if type == 0:
             for i in range(len(self.robots)):
@@ -322,6 +356,17 @@ class Scene():
                 
         elif type == 3:
             # Show formation
+            
+            # record individual trajectories
+            for i in range(len(self.robots)):
+                x = self.robots[i].xi.x
+                y = self.robots[i].xi.y
+                if i not in self.ydict[type].keys():
+                    self.ydict2[type][i] = np.array([[x, y]])
+                else: 
+                    self.ydict2[type][i] = np.append(self.ydict2[type][i], 
+                               [[x, y]], axis = 0)
+                    
             # print('time: ', (self.t + 1e-5) % 1)
             if (self.t + 1e-5) % 3 < 2e-5:
                 print("recording")
@@ -350,12 +395,10 @@ class Scene():
             if self.t > tf:
                 plt.figure(type)
                 for i in range(len(self.robots)):
-                    if i == 0:
-                        c = (1, 0, 0)
-                    elif i == 1:
-                        c = (0, 1, 0)
-                    elif i == 2:
-                        c = (0, 0, 1)
+                    c = self.getRobotColor(i)
+                    plt.plot(self.ydict2[type][i][:, 0], 
+                             self.ydict2[type][i][:, 1], 
+                             '-', color = c)
                     for j in range(len(self.tss)):
                         plt.plot(self.ydict[type][i][j, 0], 
                                  self.ydict[type][i][j, 1], 
@@ -391,6 +434,81 @@ class Scene():
                 plt.show()
                 self.ploted[type] = True 
         
+        elif type == 4:
+            # Show speed
+            for i in range(len(self.robots)):
+                vActual = self.robots[i].vActual
+                vDesired = (self.robots[i].v1Desired + self.robots[i].v2Desired)/2
+                if i not in self.ydict[type].keys():
+                    self.ydict[type][i] = []
+                    self.ydict2[type][i] = []
+                self.ydict[type][i].append(vActual)
+                self.ydict2[type][i].append(vDesired)
+            if self.t > tf:
+                plt.figure(type)
+                for i in range(len(self.robots)):
+                    c = self.getRobotColor(i)
+                    curve1, = plt.plot(self.ts, self.ydict[type][i], '-', 
+                                      color = c, label = 'Actual')
+                    curve2, = plt.plot(self.ts, self.ydict2[type][i], '--', 
+                                      color = c, label = 'Desired')
+                plt.legend(handles = [curve1, curve2])
+                plt.xlabel('t (s)')
+                plt.ylabel('v (m/s)')
+                plt.show()
+                self.ploted[type] = True
+        elif type == 5:
+            # Show angular velocity
+            for i in range(len(self.robots)):
+                omegaActual = self.robots[i].omegaActual
+                omegaDesired = (self.robots[i].v2Desired - 
+                                self.robots[i].v1Desired) / self.robots[i].l * 2
+                if i not in self.ydict[type].keys():
+                    self.ydict[type][i] = []
+                    self.ydict2[type][i] = []
+                self.ydict[type][i].append(omegaActual)
+                self.ydict2[type][i].append(omegaDesired)
+            if self.t > tf:
+                plt.figure(type)
+                for i in range(len(self.robots)):
+                    c = self.getRobotColor(i)
+                    curve1, = plt.plot(self.ts, self.ydict[type][i], '-', 
+                                      color = c, label = 'Actual')
+                    curve2, = plt.plot(self.ts, self.ydict2[type][i], '--', 
+                                      color = c, label = 'Desired')
+                plt.legend(handles = [curve1, curve2])
+                plt.xlabel('t (s)')
+                plt.ylabel('omega (rad/s)')
+                plt.show()
+                self.ploted[type] = True
+        
+        elif type == 6:
+            # Show observation1
+            
+            for i in range(len(self.robots)):
+                plt.figure()
+                c = self.getRobotColor(i)
+                pc = self.robots[i].pointCloud
+                dist = pc.scanVector
+                angle = pc.scanAngle
+                for j in range(pc.lenScanVector):
+                    x = -dist[0, j] * math.cos(angle[j])
+                    y = -dist[0, j] * math.sin(angle[j])
+                    plt.plot([0, x], [0, y], '-', color = c)
+                plt.xlabel('x (m)')
+                plt.ylabel('y (m)')
+                plt.axes().set_aspect('equal')
+                plt.show()
+            self.ploted[type] = True
+    
+    def getRobotColor(self, i):
+        if i == 0:
+            c = (1, 0, 0)
+        elif i == 1:
+            c = (0, 1, 0)
+        elif i == 2:
+            c = (0, 0, 1)
+        return c
     
     def m2pix(self, p = None):
         if p is None: # if p is None
