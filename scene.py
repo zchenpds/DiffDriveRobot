@@ -4,8 +4,11 @@ Created on Sun Nov 19 22:06:30 2017
 
 @author: cz
 """
+try:
+    import cv2
+except ImportError:
+    USE_CV2 = False
 
-import cv2
 import numpy as np
 from robot import Robot
 import matplotlib.pyplot as plt
@@ -250,6 +253,8 @@ class Scene():
         self.centerTraj[-1, :] /= len(self.robots)
          
     def renderScene(self, timestep = -1, waitTime = 25):
+        if USE_CV2 == False:
+            return
         for robot in self.robots:
             robot.draw(self.image, 1)
             robot.draw(self.image, 2)
@@ -257,6 +262,8 @@ class Scene():
         cv2.waitKey(waitTime)
         
     def showOccupancyMap(self, waitTime = 25):
+        if USE_CV2 == False:
+            return
         pc = self.robots[0].pointCloud
         wPix = pc.wPix
         hPix = pc.hPix
@@ -549,7 +556,8 @@ class Scene():
     
     
     def deallocate(self):
-        cv2.destroyAllWindows() # Add this to fix the window freezing bug
+        if USE_CV2 == True:
+            cv2.destroyAllWindows() # Add this to fix the window freezing bug
         
         # vrep related
         if self.vrepConnected:

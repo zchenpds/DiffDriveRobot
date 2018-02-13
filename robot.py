@@ -5,10 +5,14 @@ Created on Sun Nov 19 23:08:18 2017
 @author: cz
 """
 
+try:
+    import cv2
+except ImportError:
+    USE_CV2 = False
+
 import math
 from state import State
 import numpy as np
-import cv2
 import vrep
 from data import Data
 from pointcloud import PointCloud
@@ -234,12 +238,13 @@ class Robot():
         p2Pix = self.scene.m2pix(p2)
         p0Pix = self.scene.m2pix(p0)
         p3Pix = self.scene.m2pix(p3)
-        if self.dynamics <= 1 or self.dynamics == 4:
-            cv2.circle(image, tuple(p0Pix[0]), rPix, color)
-        else:
-            cv2.line(image, tuple(p1Pix[0]), tuple(p2Pix[0]), color)
-            cv2.line(image, tuple(p0Pix[0]), tuple(p3Pix[0]), color)
-    
+        if USE_CV2 == True:
+            if self.dynamics <= 1 or self.dynamics == 4:
+                cv2.circle(image, tuple(p0Pix[0]), rPix, color)
+            else:
+                cv2.line(image, tuple(p1Pix[0]), tuple(p2Pix[0]), color)
+                cv2.line(image, tuple(p0Pix[0]), tuple(p3Pix[0]), color)
+        
     def setPosition(self, stateVector = None):
         # stateVector = [x, y, theta]
         
