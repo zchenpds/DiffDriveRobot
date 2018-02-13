@@ -156,11 +156,11 @@ class DeepFCL:
         #observations = (observations - self.mean_obs) / self.std_obs
         saver = tf.train.Saver()
         current_dir = os.getcwd()
-        save_path = os.path.join(current_dir + '\\models\\')
+        save_path = os.path.join(current_dir, 'models')
         num_epochs = 1000
         with tf.Session() as sess:
             # load the model and output action
-            saver.restore(sess, os.path.join(save_path, 'model_epi' + str(num_epochs-1)))
+            saver.restore(sess, os.path.join(save_path, 'model_epi' + str(num_epochs-1) + '.meta'))
             act_output = sess.run(self.out, feed_dict = {self.obs_var: observations})
             
         return act_output

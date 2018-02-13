@@ -157,10 +157,10 @@ class Robot():
         elif self.dynamics == 30:
             if self.learnedController == None:
                 raise Exception("learnedController cannot be None!")
-            action = self.learnedController(self.pointCloud.occupancyMap.flatten())
+            action = self.learnedController(self.pointCloud.occupancyMap.reshape(1, 2500))
             #action = np.array([0, 0])
-            v1 = action[0]
-            v2 = action[1]
+            v1 = action[0, 0]
+            v2 = action[0, 1]
         else:
             raise Exception("Undefined dynanmics")
         

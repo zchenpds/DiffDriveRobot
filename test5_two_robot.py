@@ -2,7 +2,7 @@
 """
 Created on Sun Nov 19 23:09:34 2017
 This test file is dependent on vrep.
-
+To run this file, please open vrep file scene/scene_double.ttt first
 @author: cz
 """
 
@@ -12,17 +12,23 @@ import numpy as np
 # from data import Data
 from DeepFCL import DeepFCL
 
+USE_MODEL_BASED_CONTROLLER = 11
 USE_LEARNED_CONTROLLER = 30
+
 fcl = DeepFCL(50, 50, 2, 1)
 
 def generateData():
     sc = Scene(recordData = True)
     try:
-        dynamics = 11
-        sc.addRobot(np.float32([[-2, 0, 0], [0, 0, 0]]), dynamics)
+        sc.addRobot(np.float32([[-2, 0, 0], [0, 0, 0]]), 
+                    dynamics = USE_MODEL_BASED_CONTROLLER)
         sc.addRobot(np.float32([[1, 3, 0], [0, -1, 0]]), 
-                    dynamics = USE_LEARNED_CONTROLLER, 
-                    learnedController = fcl.test)
+                    dynamics = USE_MODEL_BASED_CONTROLLER)
+#==============================================================================
+#         sc.addRobot(np.float32([[1, 3, 0], [0, -1, 0]]), 
+#                     dynamics = USE_LEARNED_CONTROLLER, 
+#                     learnedController = fcl.test)
+#==============================================================================
         
         # No leader
         sc.setADjMatrix(np.uint8([[0, 0], [1, 0]]))
@@ -57,7 +63,7 @@ def generateData():
         sc.resetPosition()
         sc.plot(3, tf)
         while sc.simulate():
-            sc.renderScene(waitTime = int(sc.dt * 1000))
+            #sc.renderScene(waitTime = int(sc.dt * 1000))
             #sc.showOccupancyMap(waitTime = int(sc.dt * 1000))
             
             #print("---------------------")
