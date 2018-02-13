@@ -153,10 +153,10 @@ class DeepFCL:
         
         
     def test(self, observations):
-        #observations = (observations - self.mean_obs) / self.std_obs
+        observations = (observations - self.mean_obs) / self.std_obs
         saver = tf.train.Saver()
         current_dir = os.getcwd()
-        save_path = os.path.join(current_dir + '\\models\\')
+        save_path = os.path.join(current_dir + '/models/')
         num_epochs = 1000
         with tf.Session() as sess:
             # load the model and output action
