@@ -43,10 +43,11 @@ class Scene():
         self.objectNames = []
         self.recordData = recordData
         
-    def addRobot(self, arg, dynamics, arg2 = np.float32([.5, .5])):
+    def addRobot(self, arg, dynamics, arg2 = np.float32([.5, .5]), learnedController = None):
         robot = Robot(self)
         robot.index = len(self.robots)
         
+        robot.learnedController = learnedController
         robot.xi.x = arg[0, 0]
         robot.xi.y = arg[0, 1]
         robot.xi.theta = arg[0, 2]
@@ -58,7 +59,7 @@ class Scene():
         robot.xid0.theta = arg[1, 2]
         robot.dynamics = dynamics
         
-        if dynamics == 20:
+        if dynamics == 20 or dynamics == 21:
             robot.arg2 = arg2
         
         if robot.index == 0:
@@ -480,11 +481,34 @@ class Scene():
                 plt.xlabel('t (s)')
                 plt.ylabel('omega (rad/s)')
                 plt.show()
-                self.ploted[type] = True
+                self.ploted[type] = True        
         
         elif type == 6:
+            # Show Euler angles
+            for i in range(len(self.robots)):
+                alpha = self.robots[i].xi.alpha / math.pi * 180
+                beta = self.robots[i].xi.beta / math.pi * 180
+                if i not in self.ydict[type].keys():
+                    self.ydict[type][i] = []
+                    self.ydict2[type][i] = []
+                self.ydict[type][i].append(alpha)
+                self.ydict2[type][i].append(beta)
+            if self.t > tf:
+                plt.figure(type)
+                for i in range(len(self.robots)):
+                    c = self.getRobotColor(i)
+                    curve1, = plt.plot(self.ts, self.ydict[type][i], '-', 
+                                      color = c, label = 'alpha')
+                    curve2, = plt.plot(self.ts, self.ydict2[type][i], '--', 
+                                      color = c, label = 'beta')
+                plt.legend(handles = [curve1, curve2])
+                plt.xlabel('t (s)')
+                plt.ylabel('angles (deg)')
+                plt.show()
+                self.ploted[type] = True     
+                
+        elif type == 7:
             # Show observation1
-            
             for i in range(len(self.robots)):
                 plt.figure()
                 c = self.getRobotColor(i)
@@ -500,7 +524,6 @@ class Scene():
                 plt.axes().set_aspect('equal')
                 plt.show()
             self.ploted[type] = True
-    
     def getRobotColor(self, i):
         if i == 0:
             c = (1, 0, 0)

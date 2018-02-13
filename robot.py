@@ -139,20 +139,49 @@ class Robot():
             else:
                 v1 = self.arg2[0]
                 v2 = self.arg2[1]
-            
+                
+        elif self.dynamics == 21:
+            # step signal
+            if self.scene.t < 1:
+                v1 = 0
+                v2 = 0
+            elif self.scene.t < 4:
+                v1 = self.arg2[0]
+                v2 = self.arg2[1]
+            elif self.scene.t < 7:
+                v1 = -self.arg2[0]
+                v2 = -self.arg2[1]
+            else:
+                v1 = self.arg2[0]
+                v2 = self.arg2[1]
+        elif self.dynamics == 30:
+            if self.learnedController == None:
+                raise Exception("learnedController cannot be None!")
+            action = self.learnedController(self.pointCloud.occupancyMap.flatten())
+            #action = np.array([0, 0])
+            v1 = action[0]
+            v2 = action[1]
+        else:
+            raise Exception("Undefined dynanmics")
+        
         #print("v1 = %.3f" % v1, "m/s, v2 = %.3f" % v2)
         
         vm = 1.5 # wheel's max linear speed in m/s
         # Find the factor for converting linear speed to angular speed
-        if math.fabs(v2) >= math.fabs(v1) and math.fabs(v2) > vm:
-            alpha = vm / math.fabs(v2)
-        elif math.fabs(v2) < math.fabs(v1) and math.fabs(v1) > vm:
-            alpha = vm / math.fabs(v1)
+        if False: #v2 + v1 < 0:
+            if v1 > v2:
+                v2 = -v1
+            else:
+                v1 = -v2
         else:
-            alpha = 1
-            
-        v1 = alpha * v1
-        v2 = alpha * v2
+            if math.fabs(v2) >= math.fabs(v1) and math.fabs(v2) > vm:
+                alpha = vm / math.fabs(v2)
+            elif math.fabs(v2) < math.fabs(v1) and math.fabs(v1) > vm:
+                alpha = vm / math.fabs(v1)
+            else:
+                alpha = 1
+            v1 = alpha * v1
+            v2 = alpha * v2
             
         self.v1Desired = v1
         self.v2Desired = v2
@@ -263,7 +292,10 @@ class Robot():
         self.xi.alpha = ori[0]
         self.xi.beta = ori[1]
         self.xi.theta = ori[2]
-        self.vActual = (vel[0]**2 + vel[1]**2)**0.5
+        sgn = np.sign(np.dot(np.asarray(vel[0:2]), 
+                             np.asarray([math.cos(self.xi.theta), 
+                                         math.sin(self.xi.theta)])))
+        self.vActual = sgn * (vel[0]**2 + vel[1]**2)**0.5
         self.omegaActual = omega[2]
         # Read laser/vision sensor data
         if self.scene.SENSOR_TYPE == "2d_":

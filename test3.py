@@ -67,7 +67,7 @@ def generateData():
             sc.plot(3, tf)
             sc.plot(4, tf)
             sc.plot(5, tf)
-            #sc.plot(6, tf)
+            sc.plot(6, tf)
             if sc.t > tf:
                 break
                 
