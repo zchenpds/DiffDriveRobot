@@ -6,6 +6,7 @@ Created on Sun Nov 19 22:06:30 2017
 """
 try:
     import cv2
+    USE_CV2 = True
 except ImportError:
     USE_CV2 = False
 
@@ -15,11 +16,17 @@ import matplotlib.pyplot as plt
 import vrep
 import math
 import random
+from state import State
+
+REFERENCE_SPEED = 0.3
 
 class Scene():
     def __init__(self, recordData = False):
         self.t = 0
         self.dt = 0.01
+        
+        # formation reference link
+        self.xid = State(0.0, 0.0, math.pi / 2)
         
         # for plots
         self.ts = [] # timestamps
@@ -46,10 +53,28 @@ class Scene():
         self.objectNames = []
         self.recordData = recordData
         
-    def addRobot(self, arg, dynamics, arg2 = np.float32([.5, .5]), learnedController = None):
+        self.occupancyMapType = None
+        self.OCCUPANCY_MAP_BINARY = 0
+        # 1 for 3-channel: mean height, height variance, visibility
+        self.OCCUPANCY_MAP_THREE_CHANNEL = 1
+        
+        # CONSTANTS
+        self.dynamics = 11
+        self.DYNAMICS_MODEL_BASED_CICULAR = 11
+        self.DYNAMICS_MODEL_BASED_STABILIZER = 12
+        self.DYNAMICS_MODEL_BASED_LINEAR = 13
+        self.DYNAMICS_LEARNED = 30
+        
+        # follower does not have knowledge of absolute position
+        self.ROLE_LEADER = 0
+        self.ROLE_FOLLOWER = 1
+        
+    def addRobot(self, arg, arg2 = np.float32([.5, .5]), 
+                 role = 1, learnedController = None):
         robot = Robot(self)
         robot.index = len(self.robots)
         
+        robot.role = role
         robot.learnedController = learnedController
         robot.xi.x = arg[0, 0]
         robot.xi.y = arg[0, 1]
@@ -60,9 +85,9 @@ class Scene():
         robot.xid0.x = arg[1, 0]
         robot.xid0.y = arg[1, 1]
         robot.xid0.theta = arg[1, 2]
-        robot.dynamics = dynamics
+        robot.dynamics = self.dynamics
         
-        if dynamics == 20 or dynamics == 21:
+        if self.dynamics >=20 and self.dynamics <= 25:
             robot.arg2 = arg2
         
         if robot.index == 0:
@@ -156,7 +181,7 @@ class Scene():
         self.robots[robotIndex].readSensorData()
         
     def resetPosition(self):
-        boundaryFactor = 0.5
+        boundaryFactor = 0.7
         MIN_DISTANCE = 1
         if self.robots[0].dynamics == 11:
             for i in range(0, len(self.robots)):
@@ -181,7 +206,7 @@ class Scene():
                         break # i++
                         
         elif self.robots[0].dynamics == 12:
-            self.robots[0].setPosition([0, 2/2, 0])
+            self.robots[0].setPosition([0.0, 1.0, 0.0])
             for i in range(1, len(self.robots)):
                 while True:
                     minDij = 100
@@ -202,9 +227,52 @@ class Scene():
                     if minDij >= MIN_DISTANCE:
                         self.robots[i].setPosition([x1, y1, theta1])
                         break # i++
+                        
+        elif self.robots[0].dynamics == 13:
+            self.robots[0].setPosition([0.0, 0.0, math.pi/2])
+            for i in range(1, len(self.robots)):
+                while True:
+                    minDij = 100
+                    alpha1 = math.pi * (1 + random.random())
+                    rho1 = boundaryFactor * self.xMax * random.random()
+                    x1 = rho1 * math.cos(alpha1)
+                    y1 = rho1 * math.sin(alpha1)
+                    theta1 = 2 * math.pi * random.random()
+                    for j in range(0, i):
+                        dij = ((x1 - self.robots[j].xi.x)**2 + 
+                               (y1 - self.robots[j].xi.y)**2)**0.5
+                        # print('j = ', j, '( %.3f' % self.robots[j].xi.x, ', %.3f'%self.robots[j].xi.y, '), ', 'dij = ', dij)
+                        if dij < minDij:
+                            minDij = dij # find the smallest dij for all j
+                    print('Min distance: ', minDij, 'from robot #', i, 'to other robots.')
+                    
+                    # if the smallest dij is greater than allowed,
+                    if minDij >= MIN_DISTANCE:
+                        self.robots[i].setPosition([x1, y1, theta1])
+                        break # i++
         #input('One moment.')
         # End of resetPosition()
-        
+
+
+    def propagateXid(self):
+        t = self.t
+        dt = self.dt
+        sDot = 0
+        thetaDot = 0
+        if self.dynamics == 13:
+            t1 = 1
+            speed = REFERENCE_SPEED
+            if t < t1:
+                sDot = t / t1 * speed
+                thetaDot = 0.0
+            else:
+                sDot = speed
+                thetaDot = 0.0
+        self.xid.x += sDot * dt * math.cos(self.xid.theta)
+        self.xid.y += sDot * dt * math.sin(self.xid.theta)
+        self.xid.theta += thetaDot * dt
+        self.xid.sDot = sDot
+        self.xid.thetaDot = thetaDot
         
     def simulate(self):
         # vrep related
@@ -215,6 +283,7 @@ class Scene():
         '''
         self.t += self.dt
         self.ts.append(self.t)
+        self.propagateXid()
         countReachedGoal = 0
         for robot in self.robots:
             robot.precompute()
@@ -268,20 +337,36 @@ class Scene():
         wPix = pc.wPix
         hPix = pc.hPix
         N = len(self.robots)
-        self.occupancyMap = np.ones((hPix, (wPix+1) * N), np.uint8) * 255
-        x0 = 0
-        for robot in self.robots:
-            x1 = x0 + wPix
-            self.occupancyMap[:, x0:x1] = robot.pointCloud.occupancyMap
-            self.occupancyMap[:, x1:(x1+1)] = np.zeros((hPix, 1), np.uint8)
-            x0 += wPix + 1
-        #print('self.occupancyMap shape: ', self.occupancyMap.shape)
         resizeFactor = int(500/hPix)
-        im = cv2.resize(self.occupancyMap, 
-                        (self.occupancyMap.shape[1] * resizeFactor, 
-                         self.occupancyMap.shape[0] * resizeFactor),
-                        interpolation = cv2.INTER_NEAREST)
-        cv2.imshow('Occupancy Map', im)
+        if self.occupancyMapType == self.OCCUPANCY_MAP_BINARY:
+            self.occupancyMap = np.ones((hPix, (wPix+1) * N), np.uint8) * 255
+            x0 = 0
+            for robot in self.robots:
+                x1 = x0 + wPix
+                self.occupancyMap[:, x0:x1] = robot.pointCloud.occupancyMap
+                self.occupancyMap[:, x1:(x1+1)] = np.zeros((hPix, 1), np.uint8)
+                x0 += wPix + 1
+            #print('self.occupancyMap shape: ', self.occupancyMap.shape)
+            
+            im = cv2.resize(self.occupancyMap, 
+                            (self.occupancyMap.shape[1] * resizeFactor, 
+                             self.occupancyMap.shape[0] * resizeFactor),
+                            interpolation = cv2.INTER_NEAREST)
+            cv2.imshow('Occupancy Map', im)
+        elif self.occupancyMap == self.OCCUPANCY_MAP_THREE_CHANNEL:
+            self.occupancyMap = np.zeros((hPix, (wPix+1) * N, 3), np.uint8)
+            x0 = 0
+            for robot in self.robots:
+                x1 = x0 + wPix
+                self.occupancyMap[:, x0:x1, :] = robot.pointCloud.occupancyMap
+                self.occupancyMap[:, x1:(x1+1), :] = np.ones((hPix, 1, 3), np.uint8) * 255
+                x0 += wPix + 1
+            #print('self.occupancyMap shape: ', self.occupancyMap.shape)
+            im = cv2.resize(self.occupancyMap, 
+                            (self.occupancyMap.shape[1] * resizeFactor, 
+                             self.occupancyMap.shape[0] * resizeFactor),
+                            interpolation = cv2.INTER_NEAREST)
+            cv2.imshow('Occupancy Map', im)
         cv2.waitKey(waitTime)
         
     def plot(self, type = 0, tf = 3):
@@ -344,8 +429,13 @@ class Scene():
                         xj = self.robots[j].xi.x
                         yi = self.robots[i].xi.y
                         yj = self.robots[j].xi.y
-                        d = pow(pow(xi - xj, 2) + pow(yi - yj, 2), 0.5) - 1.732
-                        self.ydict[type][k].append(d)
+                        d = ((xi - xj)**2 + (yi - yj)**2)**0.5
+                        xi = self.robots[i].xid.x
+                        xj = self.robots[j].xid.x
+                        yi = self.robots[i].xid.y
+                        yj = self.robots[j].xid.y
+                        d0 = ((xi - xj)**2 + (yi - yj)**2)**0.5
+                        self.ydict[type][k].append(d - d0)
                         #print(self.ydict[type][k])
                         k += 1
             if self.t > tf:
@@ -445,8 +535,11 @@ class Scene():
         elif type == 4:
             # Show speed
             for i in range(len(self.robots)):
-                vActual = self.robots[i].vActual
                 vDesired = (self.robots[i].v1Desired + self.robots[i].v2Desired)/2
+                if self.vrepConnected ==  True:
+                    vActual = self.robots[i].vActual
+                else:
+                    vActual = vDesired
                 if i not in self.ydict[type].keys():
                     self.ydict[type][i] = []
                     self.ydict2[type][i] = []
@@ -468,9 +561,12 @@ class Scene():
         elif type == 5:
             # Show angular velocity
             for i in range(len(self.robots)):
-                omegaActual = self.robots[i].omegaActual
                 omegaDesired = (self.robots[i].v2Desired - 
-                                self.robots[i].v1Desired) / self.robots[i].l * 2
+                                self.robots[i].v1Desired) / self.robots[i].l
+                if self.vrepConnected ==  True:
+                    omegaActual = self.robots[i].omegaActual
+                else:
+                    omegaActual = omegaDesired
                 if i not in self.ydict[type].keys():
                     self.ydict[type][i] = []
                     self.ydict2[type][i] = []
@@ -492,6 +588,8 @@ class Scene():
         
         elif type == 6:
             # Show Euler angles
+            if self.vrepConnected ==  False:
+                return
             for i in range(len(self.robots)):
                 alpha = self.robots[i].xi.alpha / math.pi * 180
                 beta = self.robots[i].xi.beta / math.pi * 180

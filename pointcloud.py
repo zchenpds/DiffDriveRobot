@@ -25,7 +25,11 @@ class PointCloud():
         self.hPix = 50
         self.xMax = 5
         self.yMax = 5
-        self.occupancyMap = np.ones((self.hPix, self.wPix), np.uint8) * 255
+        if self.robot.scene.occupancyMapType == self.robot.scene.OCCUPANCY_MAP_BINARY:
+            self.occupancyMap = np.ones((self.hPix, self.wPix), np.uint8) * 255
+        elif self.robot.scene.occupancyMapType == self.robot.scene.OCCUPANCY_MAP_THREE_CHANNEL:
+            self.occupancyMap = np.zeros((self.hPix, self.wPix, 3), np.uint8)
+        
         
     def clearData(self):
         self.data = []
@@ -38,15 +42,36 @@ class PointCloud():
             z = rawData[i + 1]
             y = rawData[i + 2]
             newData.append(np.float32([x, y, z]))
-        self.rotate(newData)
+        #newData = self.rotate(newData)
         self.data = self.data + newData
     
     def updateOccupancyMap(self):
-        self.occupancyMap = np.ones((self.hPix, self.wPix), np.uint8) * 255 # option 1
-        #r = int(self.l/2*self.m2pix()) # radius, option 1
-        pointCloudPix = self.m2pix(self.dataCropped) # option 1
-        for i in range(len(pointCloudPix)):
-            self.occupancyMap[(pointCloudPix[i][0], pointCloudPix[i][1])] = 0 # option 1
+        if self.robot.scene.occupancyMapType == self.robot.scene.OCCUPANCY_MAP_BINARY:
+             self.occupancyMap = np.ones((self.hPix, self.wPix), np.uint8) * 255
+             #r = int(self.l/2*self.m2pix()) # radius, option 1
+             pointCloudPix = self.m2pix(self.dataCropped) # option 1
+             for i in range(len(pointCloudPix)):
+                 self.occupancyMap[(pointCloudPix[i][0], pointCloudPix[i][1])] = 0 # option 1
+#==============================================================================
+#         if self.robot.scene.occupancyMapType == self.robot.scene.OCCUPANCY_MAP_BINARY:
+#             self.occupancyMap = np.ones((self.hPix, self.wPix), np.uint8) * 255
+#             #r = int(self.l/2*self.m2pix()) # radius, option 1
+#             pointCloudPix = self.m2pix(self.dataCropped) # option 1
+#             for i in range(len(pointCloudPix)):
+#                 if z < - 0.3
+#                 self.occupancyMap[(pointCloudPix[i][0], pointCloudPix[i][1])] = 0 # option 1
+#         elif self.robot.scene.occupancyMapType == self.robot.scene.OCCUPANCY_MAP_THREE_CHANNEL:
+#             self.occupancyMap = np.zeros((self.hPix, self.wPix, 3), np.uint8)
+#             meanHeightMatrix = np.zeros((self.hPix, self.wPix), np.float32)
+#             counterMatrix = np.zeros((self.hPix, self.wPix), np.uint16)
+#             #r = int(self.l/2*self.m2pix()) # radius, option 1
+#             pointCloudPix = self.m2pix(self.dataCropped)
+#             for i in range(len(pointCloudPix)):
+#                 xPix = pointCloudPix[i][0]
+#                 yPix = pointCloudPix[i][1]
+#                 pointCloudPix[i][2]
+#                 self.occupancyMap[(, )] = 0
+#==============================================================================
         
         
     def updateScanVector(self):
@@ -61,6 +86,13 @@ class PointCloud():
                 self.scanVector[0, k] = dist
             #print('dist: ', dist)
             
+    def getObservation(self):
+        if self.robot.scene.occupancyMapType == self.robot.scene.OCCUPANCY_MAP_BINARY:
+            osbervation = self.occupancyMap.reshape((1, self.wPix * self.wPix))
+        elif self.robot.scene.occupancyMapType == self.robot.scene.OCCUPANCY_MAP_THREE_CHANNEL:
+            osbervation = self.occupancyMap.reshape((1, self.wPix * self.wPix * 3))
+        return osbervation
+    
     def rotate(self, data = None):
         if data is None:
             raise Exception('input cannot be None')
@@ -76,6 +108,7 @@ class PointCloud():
         #print("v = ", v)
         for i in range(len(data)):
             data[i] = np.dot(R, data[i])
+        return data
         #self.show()
     
     def crop(self):
@@ -84,8 +117,8 @@ class PointCloud():
             x = float(self.data[i][0])
             y = float(self.data[i][1])
             z = float(self.data[i][2])
-            MIN = 0.28
-            if any([x > self.xMax, x < -self.xMax, y > self.yMax, y < -self.yMax, z < - 0.3]): #
+            MIN = 0.20
+            if any([x > self.xMax, x < -self.xMax, y > self.yMax, y < -self.yMax]): #
                 continue
             elif (x < MIN and y < MIN and x > -MIN and y > -MIN):
                 continue

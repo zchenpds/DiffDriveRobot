@@ -7,6 +7,7 @@ Created on Sun Nov 19 23:08:18 2017
 
 try:
     import cv2
+    USE_CV2 = True
 except ImportError:
     USE_CV2 = False
 
@@ -17,6 +18,11 @@ import vrep
 from data import Data
 from pointcloud import PointCloud
 import time
+
+LIMIT_MAX_ACC = False
+accMax = 0.5 # m/s^2
+
+REFERENCE_TRAJECTORY_OMEGA = 0.2
 
 class Robot():
     def __init__(self, scene):
@@ -44,12 +50,17 @@ class Robot():
         # Data to be recorded
         self.recordData = False
         self.data = Data(self)
+        self.v1Desired = 0
+        self.v2Desired = 0
 
+        self.role = None
+        
     def propagateDesired(self):
         if self.dynamics == 4 or self.dynamics == 11:
+            # Circular desired trajectory
             t = self.scene.t
             radius = 2
-            omega = 0.3
+            omega = REFERENCE_TRAJECTORY_OMEGA
             theta0 = math.atan2(self.xid0.y, self.xid0.x)
             rho0 = (self.xid0.x ** 2 + self.xid0.y ** 2) ** 0.5
             self.xid.x = (radius * math.cos(omega * t) +
@@ -67,6 +78,7 @@ class Robot():
             self.xid.vxp = self.xid.vx - c * math.sin(self.xid.theta) * omega
             self.xid.vyp = self.xid.vy + c * math.cos(self.xid.theta) * omega
         elif self.dynamics == 12:
+            # Fixed desired position
             self.xid.x = self.xid0.x
             self.xid.y = self.xid0.y
             self.xid.vx = 0
@@ -77,6 +89,34 @@ class Robot():
             c = self.l/2
             self.xid.vxp = 0
             self.xid.vyp = 0
+            
+        elif self.dynamics == 13:
+            # Linear desired trajectory
+            t = self.scene.t
+            #dt = self.scene.dt
+            x = self.scene.xid.x
+            y = self.scene.xid.y
+            #print('x = ', x, 'y = ', y)
+            theta = self.scene.xid.theta
+            #print('theta = ', theta)
+            sDot = self.scene.xid.sDot
+            thetaDot = self.scene.xid.thetaDot
+            
+            theta0 = math.atan2(self.xid0.y, self.xid0.x)
+            rho0 = (self.xid0.x ** 2 + self.xid0.y ** 2) ** 0.5
+            #print('theta0 = ', theta0)
+            self.xid.x = x + rho0 * math.cos(theta + theta0)
+            self.xid.y = y + rho0 * math.sin(theta + theta0)
+            self.xid.vx = sDot * math.cos(theta) - rho0 * thetaDot * math.sin(theta + theta0)
+            self.xid.vy = sDot * math.sin(theta) + rho0 * thetaDot * math.cos(theta + theta0)
+            #print('vx: ', self.xid.vx, 'vy:', self.xid.vy)
+            if (self.xid.vx**2 + self.xid.vy**2)**0.5 > 1e-3:
+                self.xid.theta = math.atan2(self.xid.vy, self.xid.vx)
+            #self.xid.omega = omega
+            
+            c = self.l/2
+            self.xid.vxp = self.xid.vx - c * math.sin(self.xid.theta) * thetaDot
+            self.xid.vyp = self.xid.vy + c * math.cos(self.xid.theta) * thetaDot
             
     def precompute(self):
         if self.dynamics >= 10:
@@ -96,13 +136,23 @@ class Robot():
                                             omega2, vrep.simx_opmode_oneshot)
             
     def control(self):
-        if self.dynamics == 11 or self.dynamics == 12:
+        if self.learnedController is not None:
+            action = self.learnedController(self.pointCloud.getObservation())
+            #action = np.array([0, 0])
+            v1 = action[0, 0]
+            v2 = action[0, 1]
+        elif self.dynamics >= 11 and self.dynamics <= 19:
             # For e-puk dynamics
             # Feedback linearization
             # v1: left wheel speed
             # v2: right wheel speed
-            K1 = 1
-            K2 = 1
+            
+            if self.role == 0: # I am a leader
+                K1 = 1
+                K2 = 1
+            else: # I am a follower
+                K1 = 0 # Reference position information is forbidden
+                K2 = 1 # Reference velocity information is forbidden
             #K3 = 1
             K4 = 1.0
             
@@ -135,6 +185,8 @@ class Robot():
             
             #v1 = 0.3
             #v2 = 0.3
+        
+        
         elif self.dynamics == 20:
             # step signal
             if self.scene.t < 1:
@@ -158,37 +210,66 @@ class Robot():
             else:
                 v1 = self.arg2[0]
                 v2 = self.arg2[1]
-        elif self.dynamics == 30:
-            if self.learnedController == None:
-                raise Exception("learnedController cannot be None!")
-            action = self.learnedController(self.pointCloud.occupancyMap.reshape(1, 2500))
-            #action = np.array([0, 0])
-            v1 = action[0, 0]
-            v2 = action[0, 1]
+                
+        elif self.dynamics == 22:
+            # step signal
+            w = 0.3
+            amp = 2
+            t = self.scene.t
+            t0 = 1
+            if t < t0:
+                v1 = 0
+                v2 = 0
+            else:
+                v1 = amp*w * math.sin(w * (t - t0)) * self.arg2[0]
+                v2 = amp*w * math.sin(w * (t - t0)) * self.arg2[1]
+        
         else:
             raise Exception("Undefined dynanmics")
         
         #print("v1 = %.3f" % v1, "m/s, v2 = %.3f" % v2)
         
-        vm = 1.5 # wheel's max linear speed in m/s
+        vm = 0.5 # wheel's max linear speed in m/s
         # Find the factor for converting linear speed to angular speed
-        if False: #v2 + v1 < 0:
-            if v1 > v2:
-                v2 = -v1
-            else:
-                v1 = -v2
+        if math.fabs(v2) >= math.fabs(v1) and math.fabs(v2) > vm:
+            alpha = vm / math.fabs(v2)
+        elif math.fabs(v2) < math.fabs(v1) and math.fabs(v1) > vm:
+            alpha = vm / math.fabs(v1)
         else:
-            if math.fabs(v2) >= math.fabs(v1) and math.fabs(v2) > vm:
-                alpha = vm / math.fabs(v2)
-            elif math.fabs(v2) < math.fabs(v1) and math.fabs(v1) > vm:
-                alpha = vm / math.fabs(v1)
-            else:
-                alpha = 1
-            v1 = alpha * v1
-            v2 = alpha * v2
+            alpha = 1
+        v1 = alpha * v1
+        v2 = alpha * v2
+
+        # Limit maximum acceleration
+        
+        if LIMIT_MAX_ACC:
             
-        self.v1Desired = v1
-        self.v2Desired = v2
+            dvMax = accMax * self.scene.dt
+            
+            # limit v1
+            dv1 = v1 - self.v1Desired
+            if dv1 > dvMax:
+                self.v1Desired += dvMax
+            elif dv1 < -dvMax:
+                self.v1Desired -= dvMax
+            else:
+                self.v1Desired = v1
+            v1 = self.v1Desired
+            
+            # limit v2
+            dv2 = v2 - self.v2Desired
+            if dv2 > dvMax:
+                self.v2Desired += dvMax
+            elif dv2 < -dvMax:
+                self.v2Desired -= dvMax
+            else:
+                self.v2Desired = v2
+            v2 = self.v2Desired
+        elif not LIMIT_MAX_ACC:
+            self.v1Desired = v1
+            self.v2Desired = v2
+        
+        
         
         # Record data
         if (self.scene.vrepConnected and 
@@ -199,7 +280,7 @@ class Robot():
             else:
                 self.data.epi_starts = np.append(self.data.epi_starts, False)
             self.data.observations = np.append(self.data.observations, 
-                                  np.expand_dims(self.pointCloud.occupancyMap.flatten(), axis = 0), 
+                                  self.pointCloud.getObservation(), 
                                   axis = 0) # option 1
             self.data.observations1 = np.append(self.data.observations1, 
                                   self.pointCloud.scanVector, axis = 0) # option 2
@@ -290,7 +371,7 @@ class Robot():
         #print("Linear speed: %.3f" % (vel[0]**2 + vel[1]**2)**0.5, 
         #      "m/s. Angular speed: %.3f" % omega[2])
         #print("pos: %.2f" % pos[0], ", %.2f" % pos[1])
-        print("Robot #", self.index, " ori: %.3f" % ori[0], ", %.3f" % ori[1], ", %.3f" % ori[2])
+        #print("Robot #", self.index, " ori: %.3f" % ori[0], ", %.3f" % ori[1], ", %.3f" % ori[2])
         
         self.xi.x = pos[0]
         self.xi.y = pos[1]
@@ -341,12 +422,12 @@ class Robot():
             self.pointCloud.addRawData(velodyne_points[2]) # will rotate here
             
             if self.VPL16_counter == 3:
-                start = time.clock()
+                #start = time.clock()
                 self.pointCloud.crop()
-                end = time.clock()
-                self.pointCloud.updateScanVector() # option 2
+                #end = time.clock()
+                #self.pointCloud.updateScanVector() # option 2
                 self.pointCloud.updateOccupancyMap() # option 1
-                print('Time elapsed: ', end - start)
+                #print('Time elapsed: ', end - start)
             self.VPL16_counter += 1
             
         elif self.scene.SENSOR_TYPE == "kinect":

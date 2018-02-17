@@ -15,9 +15,10 @@ import numpy as np
 try:
     sc = Scene()
     dynamics = 11
-    sc.addRobot(np.float32([[-2, 0, 0], [0, 2/2, 0]]), dynamics)
-    sc.addRobot(np.float32([[1, 3, 0], [1.732/2, -1/2, 0]]), dynamics)
-    sc.addRobot(np.float32([[0, 0, 0], [-1.732/2, -1/2, 0]]), dynamics)
+    sc.dynamics = dynamics
+    sc.addRobot(np.float32([[-2, 0, 0], [0, 2/2, 0]]))
+    sc.addRobot(np.float32([[1, 3, 0], [1.732/2, -1/2, 0]]))
+    sc.addRobot(np.float32([[0, 0, 0], [-1.732/2, -1/2, 0]]))
     
     sc.setADjMatrix(np.uint8([[0, 1, 1], [1, 0, 1], [1, 1, 0]]))
     # vrep related

@@ -12,21 +12,19 @@ import numpy as np
 # from data import Data
 from DeepFCL import DeepFCL
 
-USE_MODEL_BASED_CONTROLLER = 11
-USE_LEARNED_CONTROLLER = 30
-
 fcl = DeepFCL(50, 50, 2, 1)
 
 def generateData():
     sc = Scene(recordData = True)
+    #sc.occupancyMapType = sc.OCCUPANCY_MAP_THREE_CHANNEL
+    sc.occupancyMapType = sc.OCCUPANCY_MAP_BINARY
+    sc.dynamics = sc.DYNAMICS_MODEL_BASED_LINEAR # robot dynamics
     try:
-        sc.addRobot(np.float32([[-2, 0, 0], [0, 0, 0]]), 
-                    dynamics = USE_MODEL_BASED_CONTROLLER)
-        sc.addRobot(np.float32([[1, 3, 0], [0, -1, 0]]), 
-                    dynamics = USE_MODEL_BASED_CONTROLLER)
+        sc.addRobot(np.float32([[-2, 0, 0], [0.0, 0.0, 0.0]]), role = sc.ROLE_LEADER)
+        sc.addRobot(np.float32([[1, 3, 0], [-1.0, 0.0, 0.0]]), role = sc.ROLE_FOLLOWER)
 #==============================================================================
 #         sc.addRobot(np.float32([[1, 3, 0], [0, -1, 0]]), 
-#                     dynamics = USE_LEARNED_CONTROLLER, 
+#                     dynamics = sc.DYNAMICS_LEARNED, 
 #                     learnedController = fcl.test)
 #==============================================================================
         
@@ -38,11 +36,13 @@ def generateData():
         # vrep related
         sc.initVrep()
         # Choose sensor type
-        sc.SENSOR_TYPE = "VPL16" # None, 2d, VPL16, kinect
+        #sc.SENSOR_TYPE = "VPL16" # None, 2d, VPL16, kinect
+        sc.SENSOR_TYPE = "None" # None, 2d, VPL16, kinect
         sc.objectNames = ['Pioneer_p3dx', 'Pioneer_p3dx_leftMotor', 'Pioneer_p3dx_rightMotor']
         
         if sc.SENSOR_TYPE == "None":
-            pass
+            sc.setVrepHandles(0, '')
+            sc.setVrepHandles(1, '#0')
         elif sc.SENSOR_TYPE == "2d":
             sc.objectNames.append('LaserScanner_2D_front')
             sc.objectNames.append('LaserScanner_2D_rear')

@@ -14,15 +14,15 @@ import numpy as np
 def generateData(**kwargs):
     sc = Scene(recordData = True)
     try:
-        dynamics = 20
+        #dynamics = 20
         arg2 = np.float32([.5, .5])
         for name, value in kwargs.items():
             if name == "dynamics":
                 dynamics = value
             elif name == "arg2":
                 arg2 = value
-
-        sc.addRobot(np.float32([[0, 0, 0], [0, 2/2, 0]]), dynamics, arg2)
+        sc.dynamics = dynamics
+        sc.addRobot(np.float32([[0, 0, 0], [0, 2/2, 0]]), arg2)
         
         # No leader
         sc.setADjMatrix(np.uint8([[0]]))
@@ -56,7 +56,7 @@ def generateData(**kwargs):
             sc.setVrepHandles(2, '#1')
         
         #sc.renderScene(waitTime = 3000)
-        tf = 10
+        tf = 30
         sc.plot(3, tf)
         while sc.simulate():
             #sc.renderScene(waitTime = int(sc.dt * 1000))
@@ -91,7 +91,7 @@ numRun = 6
 
 for i in range(5, numRun):
     print('Run #: ', i, '...')
-    sc = generateData(dynamics = 21, arg2 = i * np.float32([.3, .3]))
+    sc = generateData(dynamics = 20, arg2 = i * np.float32([.3, .3]))
 
 
 
