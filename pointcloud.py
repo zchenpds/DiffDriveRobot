@@ -52,27 +52,6 @@ class PointCloud():
              pointCloudPix = self.m2pix(self.dataCropped) # option 1
              for i in range(len(pointCloudPix)):
                  self.occupancyMap[(pointCloudPix[i][0], pointCloudPix[i][1])] = 0 # option 1
-#==============================================================================
-#         if self.robot.scene.occupancyMapType == self.robot.scene.OCCUPANCY_MAP_BINARY:
-#             self.occupancyMap = np.ones((self.hPix, self.wPix), np.uint8) * 255
-#             #r = int(self.l/2*self.m2pix()) # radius, option 1
-#             pointCloudPix = self.m2pix(self.dataCropped) # option 1
-#             for i in range(len(pointCloudPix)):
-#                 if z < - 0.3
-#                 self.occupancyMap[(pointCloudPix[i][0], pointCloudPix[i][1])] = 0 # option 1
-#         elif self.robot.scene.occupancyMapType == self.robot.scene.OCCUPANCY_MAP_THREE_CHANNEL:
-#             self.occupancyMap = np.zeros((self.hPix, self.wPix, 3), np.uint8)
-#             meanHeightMatrix = np.zeros((self.hPix, self.wPix), np.float32)
-#             counterMatrix = np.zeros((self.hPix, self.wPix), np.uint16)
-#             #r = int(self.l/2*self.m2pix()) # radius, option 1
-#             pointCloudPix = self.m2pix(self.dataCropped)
-#             for i in range(len(pointCloudPix)):
-#                 xPix = pointCloudPix[i][0]
-#                 yPix = pointCloudPix[i][1]
-#                 pointCloudPix[i][2]
-#                 self.occupancyMap[(, )] = 0
-#==============================================================================
-        
         
     def updateScanVector(self):
         self.scanVector = np.ones((1, self.lenScanVector), np.float32) * self.maxRange
@@ -123,7 +102,7 @@ class PointCloud():
             elif (x < MIN and y < MIN and x > -MIN and y > -MIN):
                 continue
             self.dataCropped.append(np.float32([x, y]))
-        print('dataCropped length:', len(self.dataCropped))
+        #print('dataCropped length:', len(self.dataCropped))
     def getRotationMatrix(self, axis, theta):
         """
         Return the rotation matrix associated with counterclockwise rotation about

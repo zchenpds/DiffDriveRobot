@@ -638,6 +638,17 @@ class Scene():
             c = (0, 0, 1)
         return c
     
+    def getMaxFormationError(self):
+        if 2 not in self.ydict.keys():
+            raise Exception('Plot type 2 must be drawn in order to get formation error!')
+        # check max formation error
+        maxAbsError = 0
+        for key in self.ydict[2]:
+            absError = abs(self.ydict[2][key][-1])
+            if absError > maxAbsError:
+                maxAbsError = absError
+        return maxAbsError
+    
     def m2pix(self, p = None):
         if p is None: # if p is None
             return (self.wPix / self.xMax / 2)

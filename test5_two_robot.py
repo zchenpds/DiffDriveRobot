@@ -58,7 +58,7 @@ def generateData():
             sc.setVrepHandles(1, '#0')
         
         #sc.renderScene(waitTime = 3000)
-        tf = 10
+        tf = 30 # must be greater than 1
         sc.resetPosition()
         sc.plot(3, tf)
         while sc.simulate():
@@ -68,6 +68,11 @@ def generateData():
             #print("---------------------")
             #print("t = %.3f" % sc.t, "s")
             
+            if sc.t > 1:
+                maxAbsError = sc.getMaxFormationError()
+                if maxAbsError < 0.01:
+                    tf = sc.t - 0.01
+            
             #sc.plot(0, tf)
             sc.plot(2, tf)
             #sc.plot(1, tf) 
@@ -76,7 +81,10 @@ def generateData():
             sc.plot(5, tf)
             sc.plot(6, tf)
             if sc.t > tf:
+                print('maxAbsError = ', maxAbsError)
                 break
+            
+            
                 
         
             #print('robot 0: ', sc.robots[0].xi.x, ', ', sc.robots[0].xi.y, ', ', sc.robots[0].xi.theta)
@@ -95,30 +103,22 @@ def generateData():
         sc.deallocate()
         raise
     
-    # check max formation error
-    maxAbsError = 0
-    for key in sc.ydict[2]:
-        absError = abs(sc.ydict[2][key][-1])
-        if absError > maxAbsError:
-            maxAbsError = absError
-    print('maxAbsError = ', maxAbsError)
     
-    if maxAbsError < 0.5:
+    
+    if True: #maxAbsError < 0.01:
         return sc
     else:
         return None
 # main
-numRun = 2
+numRun = 3
 dataList = []
-
-
 
 
 for i in range(0, numRun):
     print('Run #: ', i, '...')
     # First episode
     sc = generateData()
-    if sc != None:
+    if sc is not None:
         # if the list is empty
         if not dataList:
             for robot in sc.robots:
