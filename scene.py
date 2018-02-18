@@ -90,8 +90,8 @@ class Scene():
         if self.dynamics >=20 and self.dynamics <= 25:
             robot.arg2 = arg2
         
-        if robot.index == 0:
-            robot.recordData = False
+        if robot.role == self.ROLE_LEADER:
+            robot.recordData = False # Leader data is not recorded
         else:
             robot.recordData = self.recordData
         

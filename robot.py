@@ -54,6 +54,8 @@ class Robot():
         self.v2Desired = 0
 
         self.role = None
+        self.neighbors = []
+        self.leader = None # Only for data recording purposes
         
     def propagateDesired(self):
         if self.dynamics == 4 or self.dynamics == 11:
@@ -119,6 +121,7 @@ class Robot():
             self.xid.vyp = self.xid.vy + c * math.cos(self.xid.theta) * thetaDot
             
     def precompute(self):
+        self.updateNeighbors()
         if self.dynamics >= 10:
             self.xi.transform()
             self.xid.transform()
@@ -135,6 +138,19 @@ class Robot():
                                             self.motorRightHandle, 
                                             omega2, vrep.simx_opmode_oneshot)
             
+    def updateNeighbors(self):
+        self.neighbors = []
+        self.leader = None
+        for j in range(len(self.scene.robots)):
+            if self.scene.adjMatrix[self.index, j] == 0:
+                continue
+            robot = self.scene.robots[j] # neighbor
+            self.neighbors.append(robot)
+            if robot.role == self.scene.ROLE_LEADER:
+                if self.leader is not None:
+                    raise Exception('There cannot be more than two leaders in a scene!')
+                self.leader = robot
+    
     def control(self):
         if self.learnedController is not None:
             action = self.learnedController(self.pointCloud.getObservation())
@@ -160,10 +176,8 @@ class Robot():
             vxp = 0
             vyp = 0
             
-            for j in range(len(self.scene.robots)):
-                if self.scene.adjMatrix[self.index, j] == 0:
-                    continue
-                robot = self.scene.robots[j] # neighbor
+            self.updateNeighbors()
+            for robot in self.neighbors:
                 vxp += -K4 * ((self.xi.xp - robot.xi.xp) - (self.xid.xp - robot.xid.xp))
                 vyp += -K4 * ((self.xi.yp - robot.xi.yp) - (self.xid.yp - robot.xid.yp))
             
@@ -240,7 +254,7 @@ class Robot():
         v1 = alpha * v1
         v2 = alpha * v2
 
-        # Limit maximum acceleration
+        # Limit maximum acceleration (deprecated)
         
         if LIMIT_MAX_ACC:
             
@@ -270,22 +284,28 @@ class Robot():
             self.v2Desired = v2
         
         
-        
         # Record data
         if (self.scene.vrepConnected and 
             self.scene.SENSOR_TYPE == "VPL16" and 
             self.VPL16_counter == 3 and self.recordData == True):
-            if len(self.data.epi_starts) == 0:
-                self.data.epi_starts = np.append(self.data.epi_starts, True)
-            else:
-                self.data.epi_starts = np.append(self.data.epi_starts, False)
-            self.data.observations = np.append(self.data.observations, 
-                                  self.pointCloud.getObservation(), 
-                                  axis = 0) # option 1
-            self.data.observations1 = np.append(self.data.observations1, 
-                                  self.pointCloud.scanVector, axis = 0) # option 2
-            self.data.obs2 = np.append(self.data.obs2, [[self.xi.x, self.xi.y, self.xi.theta]], axis = 0)
-            self.data.actions = np.append(self.data.actions, [[v1, v2]], axis = 0)
+            self.data.add()
+#==============================================================================
+#         # Record data
+#         if (self.scene.vrepConnected and 
+#             self.scene.SENSOR_TYPE == "VPL16" and 
+#             self.VPL16_counter == 3 and self.recordData == True):
+#             if len(self.data.epi_starts) == 0:
+#                 self.data.epi_starts = np.append(self.data.epi_starts, True)
+#             else:
+#                 self.data.epi_starts = np.append(self.data.epi_starts, False)
+#             self.data.observations = np.append(self.data.observations, 
+#                                   self.pointCloud.getObservation(), 
+#                                   axis = 0) # option 1
+#             self.data.observations1 = np.append(self.data.observations1, 
+#                                   self.pointCloud.scanVector, axis = 0) # option 2
+#             self.data.obs2 = np.append(self.data.obs2, [[self.xi.x, self.xi.y, self.xi.theta]], axis = 0)
+#             self.data.actions = np.append(self.data.actions, [[v1, v2]], axis = 0)
+#==============================================================================
             
         
         

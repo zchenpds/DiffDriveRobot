@@ -118,7 +118,7 @@ class PointCloud():
             y = float(self.data[i][1])
             z = float(self.data[i][2])
             MIN = 0.20
-            if any([x > self.xMax, x < -self.xMax, y > self.yMax, y < -self.yMax]): #
+            if any([x > self.xMax, x < -self.xMax, y > self.yMax, y < -self.yMax, z < -0.3]): #
                 continue
             elif (x < MIN and y < MIN and x > -MIN and y > -MIN):
                 continue

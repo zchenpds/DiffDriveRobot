@@ -31,13 +31,12 @@ def generateData():
         # No leader
         sc.setADjMatrix(np.uint8([[0, 0], [1, 0]]))
         # Set robot 0 as the leader.
-        # sc.setADjMatrix(np.uint8([[0, 0, 0], [1, 0, 1], [1, 1, 0]]))
         
         # vrep related
         sc.initVrep()
         # Choose sensor type
-        #sc.SENSOR_TYPE = "VPL16" # None, 2d, VPL16, kinect
-        sc.SENSOR_TYPE = "None" # None, 2d, VPL16, kinect
+        sc.SENSOR_TYPE = "VPL16" # None, 2d, VPL16, kinect
+        #sc.SENSOR_TYPE = "None" # None, 2d, VPL16, kinect
         sc.objectNames = ['Pioneer_p3dx', 'Pioneer_p3dx_leftMotor', 'Pioneer_p3dx_rightMotor']
         
         if sc.SENSOR_TYPE == "None":
@@ -64,7 +63,7 @@ def generateData():
         sc.plot(3, tf)
         while sc.simulate():
             #sc.renderScene(waitTime = int(sc.dt * 1000))
-            #sc.showOccupancyMap(waitTime = int(sc.dt * 1000))
+            sc.showOccupancyMap(waitTime = int(sc.dt * 1000))
             
             #print("---------------------")
             #print("t = %.3f" % sc.t, "s")
@@ -109,7 +108,7 @@ def generateData():
     else:
         return None
 # main
-numRun = 100
+numRun = 2
 dataList = []
 
 
