@@ -6,11 +6,13 @@ Created on Sun Nov 19 23:09:34 2017
 """
 
 from scene import Scene
+from sceneplot import ScenePlot
 from robot import Robot
 import numpy as np
 
 try:
     sc = Scene()
+    sp = ScenePlot(sc)
     dynamics = 11
     sc.dynamics = dynamics
     sc.addRobot(np.float32([[-2, 0, 0], [0, 2, 0]]))
@@ -25,8 +27,8 @@ try:
         #sc.renderScene(waitTime = 50)
         print('t = ', sc.t, 's')
         
-        sc.plot(0, tf)
-        sc.plot(1, tf) 
+        sp.plot(0, tf)
+        sp.plot(1, tf) 
         if sc.t > tf:
             break
     

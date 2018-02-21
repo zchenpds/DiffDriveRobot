@@ -7,6 +7,7 @@ This test file is dependent on vrep.
 """
 
 from scene import Scene
+from sceneplot import ScenePlot
 from robot import Robot
 import numpy as np
 
@@ -14,6 +15,7 @@ import numpy as np
 
 try:
     sc = Scene()
+    sp = ScenePlot(sc)
     dynamics = 11
     sc.dynamics = dynamics
     sc.addRobot(np.float32([[-2, 0, 0], [0, 2/2, 0]]))
@@ -49,7 +51,7 @@ try:
     
     #sc.renderScene(waitTime = 3000)
     tf = 15
-    sc.plot(3, tf)
+    sp.plot(3, tf)
     while sc.simulate():
         #sc.renderScene(waitTime = int(sc.dt * 1000))
         sc.showOccupancyMap(waitTime = int(sc.dt * 1000))
@@ -57,10 +59,10 @@ try:
         print("---------------------")
         print("t = %.3f" % sc.t, "s")
         
-        #sc.plot(0, tf)
-        sc.plot(2, tf)
-        #sc.plot(1, tf) 
-        sc.plot(3, tf)
+        #sp.plot(0, tf)
+        sp.plot(2, tf)
+        #sp.plot(1, tf) 
+        sp.plot(3, tf)
         
         if sc.t > tf:
             break

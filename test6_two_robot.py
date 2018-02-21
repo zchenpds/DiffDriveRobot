@@ -7,6 +7,7 @@ To run this file, please open vrep file scene/scene_double.ttt first
 """
 
 from scene import Scene
+from sceneplot import ScenePlot
 # from robot import Robot
 import numpy as np
 # from data import Data
@@ -16,6 +17,7 @@ fcl = DeepFCL(50, 50, 2, 1)
 sc = None
 def generateData():
     sc = Scene(recordData = True)
+    sp = ScenePlot(sc)
     #sc.occupancyMapType = sc.OCCUPANCY_MAP_THREE_CHANNEL
     sc.occupancyMapType = sc.OCCUPANCY_MAP_BINARY
     sc.dynamics = sc.DYNAMICS_MODEL_BASED_LINEAR # robot dynamics
@@ -61,7 +63,7 @@ def generateData():
         #sc.renderScene(waitTime = 3000)
         tf = 2 # must be greater than 1
         sc.resetPosition()
-        sc.plot(3, tf)
+        sp.plot(3, tf)
         while sc.simulate():
             #sc.renderScene(waitTime = int(sc.dt * 1000))
             sc.showOccupancyMap(waitTime = int(sc.dt * 1000))
@@ -74,11 +76,11 @@ def generateData():
                 if maxAbsError < 0.01:
                     pass #tf = sc.t - 0.01
             
-            #sc.plot(0, tf)
-            sc.plot(2, tf)
-            #sc.plot(1, tf) 
-            sc.plot(3, tf)
-            sc.plot(4, tf)
+            #sp.plot(0, tf)
+            sp.plot(2, tf)
+            #sp.plot(1, tf) 
+            sp.plot(3, tf)
+            sp.plot(4, tf)
             if sc.t > tf:
                 print('maxAbsError = ', maxAbsError)
                 break
@@ -97,9 +99,9 @@ def generateData():
         sc.deallocate()
         if x == 'y' or x == 'Y':
             tf = sc.t - 0.01
-            sc.plot(2, tf)
-            sc.plot(3, tf)
-            sc.plot(4, tf)
+            sp.plot(2, tf)
+            sp.plot(3, tf)
+            sp.plot(4, tf)
             raise Exception('Aborted.')
         
     except:
