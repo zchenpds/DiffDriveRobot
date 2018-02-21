@@ -69,7 +69,7 @@ def generateData():
         # Fixed initial position
         sc.robots[0].setPosition([0.0, 0.0, math.pi/2]) 
         sc.robots[1].setPosition([-2.2, -1.0, 0.3])
-        sp.plot(3, tf)
+        sp.plot(4, tf)
         while sc.simulate():
             #sc.renderScene(waitTime = int(sc.dt * 1000))
             #sc.showOccupancyMap(waitTime = int(sc.dt * 1000))

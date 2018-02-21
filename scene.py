@@ -388,7 +388,7 @@ class Scene():
         if self.errorType == 0:
             errors = self.ydict[2]
         else:
-            errors = self.ydict2[2]
+            errors = self.ydict[3]
         # check max formation error
         maxAbsError = 0
         for key in errors:

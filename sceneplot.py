@@ -11,7 +11,7 @@ import math
 class ScenePlot():
     def __init__(self, scene = None):
         self.sc = scene
-        self.TYPE_TIME_ACTIONS = 5
+        self.TYPE_TIME_ACTIONS = 6
     
     def plot(self, type = 0, tf = 0):
         # type 0: (t, x_i - x_id)
@@ -70,7 +70,6 @@ class ScenePlot():
                             # If this is the first time this type of plot is drawn
                             if k not in self.sc.ydict[type].keys():
                                 self.sc.ydict[type][k] = []
-                                self.sc.ydict2[type][k] = []
                                 # print(self.sc.ydict[type].keys())
                                 # print('i = ', i, 'j = ', j)
                             xi = self.sc.robots[i].xi.x
@@ -88,17 +87,10 @@ class ScenePlot():
                             yijd = yi - yj
                             d0 = (xijd**2 + yijd**2)**0.5
                             self.sc.ydict[type][k].append(d - d0)
-                            error2 = ((xij - xijd)**2 + (yij - yijd)**2)**0.5
-                            self.sc.ydict2[type][k].append(error2)
                             #print(self.sc.ydict[type][k])
                             k += 1
             if self.sc.t > tf:
-                if self.sc.errorType == 0:
-                    errors = self.sc.ydict[type]
-                    plt.ylabel('d_ij - d* (m)')
-                else:
-                    errors = self.sc.ydict2[type]
-                    plt.ylabel('((x_ij - x_ijd)**2 + (y_ij - y_ijd)**2)**0.5 (m)')
+                errors = self.sc.ydict[type]
                 plt.figure(type)
                 for k in range(len(errors)):
                     try:
@@ -108,12 +100,36 @@ class ScenePlot():
                         print(len(self.sc.ts))
                         print(len(errors[k]))
                 plt.xlabel('t (s)')
-                
+                plt.ylabel('d_ij - d* (m)')
                 plt.show()
                 self.sc.ploted[type] = True
-                return
-                
-        elif type == 3:
+        
+        elif type == 3: # Formation Error type 2
+            if not self.sc.ploted[type]:
+                for i in range(1, len(self.sc.robots)):
+                    # If this is the first time this type of plot is drawn
+                    if i not in self.sc.ydict[type].keys():
+                        self.sc.ydict[type][i] = []
+                        # print(self.sc.ydict[type].keys())
+                        # print('i = ', i, 'j = ', j)
+                    xi = self.sc.robots[i].xi.x
+                    yi = self.sc.robots[i].xi.y
+                    xid = self.sc.robots[i].xid.x
+                    yid = self.sc.robots[i].xid.y
+                    error = ((xi - xid)**2 + (yi - yid)**2)**0.5
+                    self.sc.ydict[type][i].append(error)
+                    #print(self.sc.ydict[type][i])
+            if self.sc.t > tf:
+                errors = self.sc.ydict[type]
+                plt.figure(type)
+                for i in range(1, len(self.sc.robots)):
+                    plt.plot(self.sc.ts, errors[i], '-')
+                plt.xlabel('t (s)')
+                plt.ylabel('((xi - xid)**2 + (yi - yid)**2)**0.5 (m)')
+                plt.show()
+                self.sc.ploted[type] = True
+        
+        elif type == 4:
             # Show formation
             if not self.sc.ploted[type]:
                 # record individual trajectories
@@ -193,7 +209,7 @@ class ScenePlot():
                 plt.show()
                 self.sc.ploted[type] = True 
         
-        elif type == 4:
+        elif type == 5:
             # Show speed
             if not self.sc.ploted[type]:
                 for i in range(len(self.sc.robots)):
@@ -220,7 +236,7 @@ class ScenePlot():
                 plt.ylabel('v (m/s)')
                 plt.show()
                 self.sc.ploted[type] = True
-        elif type == 5:
+        elif type == 6:
             # Show action
             if not self.sc.ploted[type]:
                 for i in range(len(self.sc.robots)):
@@ -245,7 +261,7 @@ class ScenePlot():
                 plt.ylabel('v (m/s)')
                 plt.show()
                 self.sc.ploted[type] = True
-        elif type == 6:
+        elif type == 7:
             # Show angular velocity
             if not self.sc.ploted[type]:
                 for i in range(len(self.sc.robots)):
@@ -274,7 +290,7 @@ class ScenePlot():
                 plt.show()
                 self.sc.ploted[type] = True        
         
-        elif type == 7:
+        elif type == 8:
             # Show Euler angles
             if not self.sc.ploted[type]:
                 if self.sc.vrepConnected ==  False:
@@ -303,7 +319,7 @@ class ScenePlot():
                 plt.show()
                 self.sc.ploted[type] = True     
                 
-        elif type == 8:
+        elif type == 9:
             # Show observation1
             for i in range(len(self.sc.robots)):
                 plt.figure()
