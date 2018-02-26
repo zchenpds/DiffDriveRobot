@@ -20,7 +20,7 @@ from state import State
 
 
 REFERENCE_SPEED = 0.3
-REFERENCE_THETA_DOT = 0.1
+REFERENCE_THETA_DOT = 0
 
 class Scene():
     def __init__(self, recordData = False):

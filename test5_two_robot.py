@@ -13,9 +13,9 @@ from sceneplot import ScenePlot
 import numpy as np
 import math
 # from data import Data
-from DeepFCL import DeepFCL
+#from DeepFCL import DeepFCL
 
-fcl = DeepFCL(50, 50, 2, 1)
+#fcl = DeepFCL(50, 50, 2, 1)
 
 def generateData():
     sc = Scene(recordData = True)
@@ -40,8 +40,8 @@ def generateData():
         # vrep related
         sc.initVrep()
         # Choose sensor type
-        #sc.SENSOR_TYPE = "VPL16" # None, 2d, VPL16, kinect
-        sc.SENSOR_TYPE = "None" # None, 2d, VPL16, kinect
+        sc.SENSOR_TYPE = "VPL16" # None, 2d, VPL16, kinect
+        #sc.SENSOR_TYPE = "None" # None, 2d, VPL16, kinect
         sc.objectNames = ['Pioneer_p3dx', 'Pioneer_p3dx_leftMotor', 'Pioneer_p3dx_rightMotor']
         
         if sc.SENSOR_TYPE == "None":
@@ -63,16 +63,16 @@ def generateData():
             sc.setVrepHandles(1, '#0')
         
         #sc.renderScene(waitTime = 3000)
-        tf = 20 # must be greater than 1
+        tf = 10 # must be greater than 1
         errorCheckerEnabled = True
-        # sc.resetPosition() # Random initial position
+        sc.resetPosition() # Random initial position
         # Fixed initial position
-        sc.robots[0].setPosition([0.0, 0.0, math.pi/2]) 
-        sc.robots[1].setPosition([-2.2, -1.0, 0.3])
+        #sc.robots[0].setPosition([0.0, 0.0, math.pi/2]) 
+        #sc.robots[1].setPosition([-2.2, -1.0, 0.3])
         sp.plot(4, tf)
         while sc.simulate():
             #sc.renderScene(waitTime = int(sc.dt * 1000))
-            #sc.showOccupancyMap(waitTime = int(sc.dt * 1000))
+            sc.showOccupancyMap(waitTime = int(sc.dt * 1000))
             
             #print("---------------------")
             #print("t = %.3f" % sc.t, "s")

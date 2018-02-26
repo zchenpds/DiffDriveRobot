@@ -7,12 +7,34 @@ Created on Tue Feb 20 17:22:47 2018
 import matplotlib.pyplot as plt
 import numpy as np
 import math
+import os
+
+
 
 class ScenePlot():
     def __init__(self, scene = None):
         self.sc = scene
+        self.TYPE_TIME_SEPARATION_ERROR = 2
+        self.TYPE_TIME_BEARING_ERROR = 3
         self.TYPE_TIME_ACTIONS = 6
-    
+        
+        self.SAVE_ENABLED = True
+        if self.SAVE_ENABLED == True:
+            directory = 'fig'
+            if not os.path.exists(directory):
+                os.makedirs(directory)
+            self.directory = directory
+            
+            count = 0
+            for filename in os.listdir(directory):
+                name, _ = os.path.splitext(filename)
+                n = int(name)
+                if count < n:
+                    count = n
+            count = count + 1
+            self.directory = os.path.join(self.directory, str(count).zfill(3))
+            os.makedirs(self.directory)
+        
     def plot(self, type = 0, tf = 0):
         # type 0: (t, x_i - x_id)
         # type 1: (t, y_i - y_id)
@@ -45,8 +67,7 @@ class ScenePlot():
                         raise
                 plt.xlabel('t (s)')
                 plt.ylabel('x_i - x_di (m)')
-                plt.show()
-                self.sc.ploted[type] = True
+                
         elif type == 1:
             if not self.sc.ploted[type]:
                 for i in range(len(self.sc.robots)):
@@ -58,52 +79,81 @@ class ScenePlot():
                     plt.plot(self.sc.ts, self.sc.ydict[type][i], '-')
                 plt.xlabel('t (s)')
                 plt.ylabel('y_i - y_di (m)')
-                plt.show()
-                self.sc.ploted[type] = True
                 
-        elif type == 2: # Formation Error
+#==============================================================================
+#         elif type == 2: # Formation Error
+#             if not self.sc.ploted[type]:
+#                 k = 0
+#                 for i in range(len(self.sc.robots)):
+#                     for j in range(0, i):
+#                         if self.sc.adjMatrix[i, j] != 0:
+#                             # If this is the first time this type of plot is drawn
+#                             if k not in self.sc.ydict[type].keys():
+#                                 self.sc.ydict[type][k] = []
+#                                 # print(self.sc.ydict[type].keys())
+#                                 # print('i = ', i, 'j = ', j)
+#                             xi = self.sc.robots[i].xi.x
+#                             xj = self.sc.robots[j].xi.x
+#                             yi = self.sc.robots[i].xi.y
+#                             yj = self.sc.robots[j].xi.y
+#                             xij = xi - xj
+#                             yij = yi - yj
+#                             d = (xij**2 + yij**2)**0.5
+#                             xi = self.sc.robots[i].xid.x
+#                             xj = self.sc.robots[j].xid.x
+#                             yi = self.sc.robots[i].xid.y
+#                             yj = self.sc.robots[j].xid.y
+#                             xijd = xi - xj
+#                             yijd = yi - yj
+#                             d0 = (xijd**2 + yijd**2)**0.5
+#                             self.sc.ydict[type][k].append(d - d0)
+#                             #print(self.sc.ydict[type][k])
+#                             k += 1
+#             if self.sc.t > tf:
+#                 errors = self.sc.ydict[type]
+#                 plt.figure(type)
+#                 for k in range(len(errors)):
+#                     try:
+#                         plt.plot(self.sc.ts, errors[k], '-')
+#                     except:
+#                         print(k)
+#                         print(len(self.sc.ts))
+#                         print(len(errors[k]))
+#                 plt.xlabel('t (s)')
+#                 plt.ylabel('Sepration Error (m)')
+#==============================================================================
+        elif type == 2: # Formation Error type 2
             if not self.sc.ploted[type]:
-                k = 0
-                for i in range(len(self.sc.robots)):
-                    for j in range(0, i):
-                        if self.sc.adjMatrix[i, j] != 0:
-                            # If this is the first time this type of plot is drawn
-                            if k not in self.sc.ydict[type].keys():
-                                self.sc.ydict[type][k] = []
-                                # print(self.sc.ydict[type].keys())
-                                # print('i = ', i, 'j = ', j)
-                            xi = self.sc.robots[i].xi.x
-                            xj = self.sc.robots[j].xi.x
-                            yi = self.sc.robots[i].xi.y
-                            yj = self.sc.robots[j].xi.y
-                            xij = xi - xj
-                            yij = yi - yj
-                            d = (xij**2 + yij**2)**0.5
-                            xi = self.sc.robots[i].xid.x
-                            xj = self.sc.robots[j].xid.x
-                            yi = self.sc.robots[i].xid.y
-                            yj = self.sc.robots[j].xid.y
-                            xijd = xi - xj
-                            yijd = yi - yj
-                            d0 = (xijd**2 + yijd**2)**0.5
-                            self.sc.ydict[type][k].append(d - d0)
-                            #print(self.sc.ydict[type][k])
-                            k += 1
+                for i in range(1, len(self.sc.robots)):
+                    # If this is the first time this type of plot is drawn
+                    if i not in self.sc.ydict[type].keys():
+                        self.sc.ydict[type][i] = []
+                        # print(self.sc.ydict[type].keys())
+                        # print('i = ', i, 'j = ', j)
+                    xi = self.sc.robots[i].xi.x
+                    yi = self.sc.robots[i].xi.y
+                    xid = self.sc.robots[i].xid.x
+                    yid = self.sc.robots[i].xid.y
+                    j = 0
+                    xj = self.sc.robots[j].xi.x
+                    yj = self.sc.robots[j].xi.y
+                    xjd = self.sc.robots[j].xid.x
+                    yjd = self.sc.robots[j].xid.y
+                    
+                    eji = np.array([xi - xj, yi - yj])
+                    ejid = np.array([xid - xjd, yid - yjd])
+                    
+                    error = np.linalg.norm(eji) - np.linalg.norm(ejid)
+                    
+                    self.sc.ydict[type][i].append(error)
+                    #print(self.sc.ydict[type][i])
             if self.sc.t > tf:
                 errors = self.sc.ydict[type]
                 plt.figure(type)
-                for k in range(len(errors)):
-                    try:
-                        plt.plot(self.sc.ts, errors[k], '-')
-                    except:
-                        print(k)
-                        print(len(self.sc.ts))
-                        print(len(errors[k]))
+                for i in range(1, len(self.sc.robots)):
+                    plt.plot(self.sc.ts, errors[i], '-')
                 plt.xlabel('t (s)')
-                plt.ylabel('d_ij - d* (m)')
-                plt.show()
-                self.sc.ploted[type] = True
-        
+                plt.ylabel('Separation Error (rad)')
         elif type == 3: # Formation Error type 2
             if not self.sc.ploted[type]:
                 for i in range(1, len(self.sc.robots)):
@@ -116,7 +166,20 @@ class ScenePlot():
                     yi = self.sc.robots[i].xi.y
                     xid = self.sc.robots[i].xid.x
                     yid = self.sc.robots[i].xid.y
-                    error = ((xi - xid)**2 + (yi - yid)**2)**0.5
+                    j = 0
+                    xj = self.sc.robots[j].xi.x
+                    yj = self.sc.robots[j].xi.y
+                    xjd = self.sc.robots[j].xid.x
+                    yjd = self.sc.robots[j].xid.y
+                    
+                    phi = math.atan2(yi - yj, xi - xj)
+                    phid = math.atan2(yid - yjd, xid - xjd)
+                    error = phi - phid
+                    while error > math.pi:
+                        error -= 2 * math.pi
+                    while error <= -math.pi:
+                        error += 2 * math.pi
+                    
                     self.sc.ydict[type][i].append(error)
                     #print(self.sc.ydict[type][i])
             if self.sc.t > tf:
@@ -125,9 +188,7 @@ class ScenePlot():
                 for i in range(1, len(self.sc.robots)):
                     plt.plot(self.sc.ts, errors[i], '-')
                 plt.xlabel('t (s)')
-                plt.ylabel('((xi - xid)**2 + (yi - yid)**2)**0.5 (m)')
-                plt.show()
-                self.sc.ploted[type] = True
+                plt.ylabel('Bearing Error (rad)')
         
         elif type == 4:
             # Show formation
@@ -206,8 +267,7 @@ class ScenePlot():
                 plt.xlabel('x (m)')
                 plt.ylabel('y (m)')
                 plt.axes().set_aspect('equal', 'datalim')
-                plt.show()
-                self.sc.ploted[type] = True 
+                
         
         elif type == 5:
             # Show speed
@@ -234,8 +294,7 @@ class ScenePlot():
                 plt.legend(handles = [curve1, curve2])
                 plt.xlabel('t (s)')
                 plt.ylabel('v (m/s)')
-                plt.show()
-                self.sc.ploted[type] = True
+                
         elif type == 6:
             # Show action
             if not self.sc.ploted[type]:
@@ -258,9 +317,8 @@ class ScenePlot():
                                       color = c, label = 'Right Wheel Velocity')
                 plt.legend(handles = [curve1, curve2])
                 plt.xlabel('t (s)')
-                plt.ylabel('v (m/s)')
-                plt.show()
-                self.sc.ploted[type] = True
+                plt.ylabel('Follower Actions (m/s)')
+                
         elif type == 7:
             # Show angular velocity
             if not self.sc.ploted[type]:
@@ -286,9 +344,7 @@ class ScenePlot():
                                       color = c, label = 'Desired')
                 plt.legend(handles = [curve1, curve2])
                 plt.xlabel('t (s)')
-                plt.ylabel('omega (rad/s)')
-                plt.show()
-                self.sc.ploted[type] = True        
+                plt.ylabel('omega (rad/s)') 
         
         elif type == 8:
             # Show Euler angles
@@ -316,13 +372,11 @@ class ScenePlot():
                 plt.legend(handles = [curve1, curve2])
                 plt.xlabel('t (s)')
                 plt.ylabel('angles (deg)')
-                plt.show()
-                self.sc.ploted[type] = True     
                 
         elif type == 9:
             # Show observation1
             for i in range(len(self.sc.robots)):
-                plt.figure()
+                plt.figure(type)
                 c = self.sc.getRobotColor(i)
                 pc = self.sc.robots[i].pointCloud
                 dist = pc.scanVector
@@ -336,3 +390,24 @@ class ScenePlot():
                 plt.axes().set_aspect('equal')
                 plt.show()
             self.sc.ploted[type] = True
+        else:
+            raise Exception("Undefined type of plot.")
+        
+        if self.sc.t > tf:
+            plt.grid(True)
+            if self.SAVE_ENABLED == True:
+                # Save plot as eps file
+                path = os.path.join(self.directory, 'fig' + str(type).zfill(2) + '.eps')
+                plt.savefig(path, format='eps', dpi=1000)
+            else:
+                plt.show()
+            self.sc.ploted[type] = True
+        
+        
+        
+        
+        
+        
+        
+        
+        
