@@ -19,6 +19,7 @@ import random
 from state import State
 
 REFERENCE_SPEED = 0.3
+REFERENCE_THETA_DOT = 0.0
 
 class Scene():
     def __init__(self, recordData = False):
@@ -264,10 +265,10 @@ class Scene():
             speed = REFERENCE_SPEED
             if t < t1:
                 sDot = t / t1 * speed
-                thetaDot = 0.0
+                thetaDot = t / t1 * REFERENCE_THETA_DOT
             else:
                 sDot = speed
-                thetaDot = 0.0
+                thetaDot = REFERENCE_THETA_DOT
         self.xid.x += sDot * dt * math.cos(self.xid.theta)
         self.xid.y += sDot * dt * math.sin(self.xid.theta)
         self.xid.theta += thetaDot * dt
@@ -629,6 +630,29 @@ class Scene():
                 plt.axes().set_aspect('equal')
                 plt.show()
             self.ploted[type] = True
+            
+        elif type == 8:
+            # Show speed
+            
+            if 1 not in self.ydict[type].keys():
+                self.ydict[type][1] = []
+                self.ydict2[type][1] = []
+            self.ydict[type][1].append(self.robots[1].v1Desired)
+            self.ydict2[type][1].append(self.robots[1].v2Desired)
+            if self.t > tf:
+                plt.figure(type)
+                
+                c = self.getRobotColor(1)
+                curve1, = plt.plot(self.ts, self.ydict[type][1], '-', 
+                                  color = c, label = 'u1')
+                curve2, = plt.plot(self.ts, self.ydict2[type][1], '--', 
+                                  color = c, label = 'u2')
+                plt.legend(handles = [curve1, curve2])
+                plt.xlabel('t (s)')
+                plt.ylabel('v (m/s)')
+                plt.show()
+                self.ploted[type] = True            
+            
     def getRobotColor(self, i):
         if i == 0:
             c = (1, 0, 0)

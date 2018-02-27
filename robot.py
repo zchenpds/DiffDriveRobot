@@ -55,7 +55,10 @@ class Robot():
 
         self.role = None
         self.neighbors = []
-        self.leader = None # Only for data recording purposes
+        self.leader = None # Only for data recording purposes        
+       
+        self.ctrl1_sm = []
+        self.ctrl2_sm = []
         
     def propagateDesired(self):
         if self.dynamics == 4 or self.dynamics == 11:
@@ -157,6 +160,17 @@ class Robot():
             #action = np.array([0, 0])
             v1 = action[0, 0]
             v2 = action[0, 1]
+            
+            self.ctrl1_sm.append(v1)
+            self.ctrl2_sm.append(v2)
+            if len(self.ctrl1_sm) < 10:
+                v1 = sum(self.ctrl1_sm) / len(self.ctrl1_sm)
+                v2 = sum(self.ctrl2_sm) / len(self.ctrl2_sm)
+            else:
+                v1 = sum(self.ctrl1_sm[len(self.ctrl1_sm)-10:len(self.ctrl1_sm)]) / 10
+                v2 = sum(self.ctrl2_sm[len(self.ctrl2_sm)-10:len(self.ctrl2_sm)]) / 10
+                
+            print(v1,v2,'dnn')
         elif self.dynamics >= 11 and self.dynamics <= 19:
             # For e-puk dynamics
             # Feedback linearization
@@ -199,7 +213,8 @@ class Robot():
             
             #v1 = 0.3
             #v2 = 0.3
-        
+ 
+            print(v1,v2,'model')
         
         elif self.dynamics == 20:
             # step signal
@@ -243,7 +258,7 @@ class Robot():
         
         #print("v1 = %.3f" % v1, "m/s, v2 = %.3f" % v2)
         
-        vm = 0.5 # wheel's max linear speed in m/s
+        vm = 0.6 # wheel's max linear speed in m/s
         # Find the factor for converting linear speed to angular speed
         if math.fabs(v2) >= math.fabs(v1) and math.fabs(v2) > vm:
             alpha = vm / math.fabs(v2)
