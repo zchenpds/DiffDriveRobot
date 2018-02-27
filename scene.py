@@ -12,11 +12,12 @@ except ImportError:
 
 import numpy as np
 from robot import Robot
-import matplotlib.pyplot as plt
+#import matplotlib.pyplot as plt
 import vrep
 import math
 import random
 from state import State
+
 
 REFERENCE_SPEED = 0.3
 REFERENCE_THETA_DOT = 0.0
@@ -69,6 +70,8 @@ class Scene():
         # follower does not have knowledge of absolute position
         self.ROLE_LEADER = 0
         self.ROLE_FOLLOWER = 1
+        
+        self.errorType = 1
         
     def addRobot(self, arg, arg2 = np.float32([.5, .5]), 
                  role = 1, learnedController = None):
@@ -370,289 +373,7 @@ class Scene():
             cv2.imshow('Occupancy Map', im)
         cv2.waitKey(waitTime)
         
-    def plot(self, type = 0, tf = 3):
-        # type 0: (t, x_i - x_id)
-        # type 1: (t, y_i - y_id)
-        # type 2: (t, e_i - e_id) (formation error)
-        # type 3: (x_i, y_i)
-        # type 4: (t, v1)
-        # If this is the first time this type of plot is drawn, initialize
-        if type not in self.ydict.keys():
-            self.ydict[type] = dict()
-            self.ydict2[type] = dict() # for type 3 figure only
-            self.ploted[type] = False 
-            if type == 0 or type == 1:
-                for i in range(len(self.robots)):
-                    self.ydict[type][i] = []
-            
-        if self.ploted[type] and type != 6:
-            return # This type of plot is completed
-        if type == 0:
-            for i in range(len(self.robots)):
-                x = self.robots[i].xi.x - self.robots[i].xid.x
-                self.ydict[type][i].append(x)
-            if self.t > tf:
-                plt.figure(type)
-                for i in range(len(self.robots)):
-                    try:
-                        plt.plot(self.ts, self.ydict[type][i], '-')
-                    except:
-                        print('type: ', type)
-                        raise
-                plt.xlabel('t (s)')
-                plt.ylabel('x_i - x_di (m)')
-                plt.show()
-                self.ploted[type] = True
-        elif type == 1:
-            for i in range(len(self.robots)):
-                x = self.robots[i].xi.y - self.robots[i].xid.y
-                self.ydict[type][i].append(x)
-            if self.t > tf:
-                plt.figure(type)
-                for i in range(len(self.robots)):
-                    plt.plot(self.ts, self.ydict[type][i], '-')
-                plt.xlabel('t (s)')
-                plt.ylabel('y_i - y_di (m)')
-                plt.show()
-                self.ploted[type] = True
-                
-        elif type == 2: # Formation Error
-            k = 0
-            for i in range(len(self.robots)):
-                for j in range(0, i):
-                    if self.adjMatrix[i, j] != 0:
-                        # If this is the first time this type of plot is drawn
-                        if k not in self.ydict[type].keys():
-                            self.ydict[type][k] = []
-                            # print(self.ydict[type].keys())
-                            # print('i = ', i, 'j = ', j)
-                        xi = self.robots[i].xi.x
-                        xj = self.robots[j].xi.x
-                        yi = self.robots[i].xi.y
-                        yj = self.robots[j].xi.y
-                        d = ((xi - xj)**2 + (yi - yj)**2)**0.5
-                        xi = self.robots[i].xid.x
-                        xj = self.robots[j].xid.x
-                        yi = self.robots[i].xid.y
-                        yj = self.robots[j].xid.y
-                        d0 = ((xi - xj)**2 + (yi - yj)**2)**0.5
-                        self.ydict[type][k].append(d - d0)
-                        #print(self.ydict[type][k])
-                        k += 1
-            if self.t > tf:
-                plt.figure(type)
-                for k in range(len(self.ydict[type])):
-                    try:
-                        plt.plot(self.ts, self.ydict[type][k], '-')
-                    except:
-                        print(k)
-                        print(len(self.ts))
-                        print(len(self.ydict[type]))
-                plt.xlabel('t (s)')
-                plt.ylabel('d_ij - d* (m)')
-                plt.show()
-                self.ploted[type] = True
-                
-        elif type == 3:
-            # Show formation
-            
-            # record individual trajectories
-            for i in range(len(self.robots)):
-                x = self.robots[i].xi.x
-                y = self.robots[i].xi.y
-                if i not in self.ydict[type].keys():
-                    self.ydict2[type][i] = np.array([[x, y]])
-                else: 
-                    self.ydict2[type][i] = np.append(self.ydict2[type][i], 
-                               [[x, y]], axis = 0)
-                    
-            # print('time: ', (self.t + 1e-5) % 1)
-            if (self.t + 1e-5) % 3 < 2e-5:
-                print("recording")
-                self.tss.append(self.t)
-                for i in range(len(self.robots)):
-                    x = self.robots[i].xi.x
-                    y = self.robots[i].xi.y
-                    theta = self.robots[i].xi.theta*180/math.pi - 90 # convert to deg
-                    if len(self.tss) == 1:
-                        self.ydict[type][i] = np.array([[x, y, theta]])
-                        if i == 0:
-                            self.centerTrajS = np.array([[x, y]])
-                        else:
-                            self.centerTrajS += np.array([[x, y]])
-                    else:
-                        self.ydict[type][i] = np.append(self.ydict[type][i], 
-                                  [[x, y, theta]], axis = 0)
-                        if i == 0:
-                            self.centerTrajS = np.append(self.centerTrajS, [[x, y]], axis = 0)
-                        else:
-                            self.centerTrajS[-1, :] += np.array([x, y])
-                    #print(self.centerTrajS)
-                self.centerTrajS[-1, :] /= len(self.robots)
-                
-            # Show Figure
-            if self.t > tf:
-                plt.figure(type)
-                for i in range(len(self.robots)):
-                    c = self.getRobotColor(i)
-                    plt.plot(self.ydict2[type][i][:, 0], 
-                             self.ydict2[type][i][:, 1], 
-                             '-', color = c)
-                    for j in range(len(self.tss)):
-                        plt.plot(self.ydict[type][i][j, 0], 
-                                 self.ydict[type][i][j, 1], 
-                                 marker=(3, 0, self.ydict[type][i][j, 2]),
-                                 markersize=20, linestyle='None',
-                                 color = c)
-                
-                l = len(self.robots)
-                for i in range(len(self.robots)):
-                    for j in range(len(self.tss)):
-                        x1 = self.ydict[type][i][j, 0]
-                        y1 = self.ydict[type][i][j, 1]
-                        x2 = self.ydict[type][(i+1)%l][j, 0]
-                        y2 = self.ydict[type][(i+1)%l][j, 1]
-                        plt.plot([x1, x2], [y1, y2], '-', color = (0, 0, 0))
-                        
-                # Plot center trajectory
-                for j in range(len(self.tss)):
-                    plt.plot(self.centerTrajS[j, 0], 
-                             self.centerTrajS[j, 1],
-                             'o',
-                             markersize=10, linestyle='None',
-                             color = (0, 0, 0))
-                
-                plt.plot(self.centerTraj[:, 0], 
-                         self.centerTraj[:, 1],
-                         '-',
-                         color = (0, 0, 0))
-                
-                plt.xlabel('x (m)')
-                plt.ylabel('y (m)')
-                plt.axes().set_aspect('equal', 'datalim')
-                plt.show()
-                self.ploted[type] = True 
-        
-        elif type == 4:
-            # Show speed
-            for i in range(len(self.robots)):
-                vDesired = (self.robots[i].v1Desired + self.robots[i].v2Desired)/2
-                if self.vrepConnected ==  True:
-                    vActual = self.robots[i].vActual
-                else:
-                    vActual = vDesired
-                if i not in self.ydict[type].keys():
-                    self.ydict[type][i] = []
-                    self.ydict2[type][i] = []
-                self.ydict[type][i].append(vActual)
-                self.ydict2[type][i].append(vDesired)
-            if self.t > tf:
-                plt.figure(type)
-                for i in range(len(self.robots)):
-                    c = self.getRobotColor(i)
-                    curve1, = plt.plot(self.ts, self.ydict[type][i], '-', 
-                                      color = c, label = 'Actual')
-                    curve2, = plt.plot(self.ts, self.ydict2[type][i], '--', 
-                                      color = c, label = 'Desired')
-                plt.legend(handles = [curve1, curve2])
-                plt.xlabel('t (s)')
-                plt.ylabel('v (m/s)')
-                plt.show()
-                self.ploted[type] = True
-        elif type == 5:
-            # Show angular velocity
-            for i in range(len(self.robots)):
-                omegaDesired = (self.robots[i].v2Desired - 
-                                self.robots[i].v1Desired) / self.robots[i].l
-                if self.vrepConnected ==  True:
-                    omegaActual = self.robots[i].omegaActual
-                else:
-                    omegaActual = omegaDesired
-                if i not in self.ydict[type].keys():
-                    self.ydict[type][i] = []
-                    self.ydict2[type][i] = []
-                self.ydict[type][i].append(omegaActual)
-                self.ydict2[type][i].append(omegaDesired)
-            if self.t > tf:
-                plt.figure(type)
-                for i in range(len(self.robots)):
-                    c = self.getRobotColor(i)
-                    curve1, = plt.plot(self.ts, self.ydict[type][i], '-', 
-                                      color = c, label = 'Actual')
-                    curve2, = plt.plot(self.ts, self.ydict2[type][i], '--', 
-                                      color = c, label = 'Desired')
-                plt.legend(handles = [curve1, curve2])
-                plt.xlabel('t (s)')
-                plt.ylabel('omega (rad/s)')
-                plt.show()
-                self.ploted[type] = True        
-        
-        elif type == 6:
-            # Show Euler angles
-            if self.vrepConnected ==  False:
-                return
-            for i in range(len(self.robots)):
-                alpha = self.robots[i].xi.alpha / math.pi * 180
-                beta = self.robots[i].xi.beta / math.pi * 180
-                if i not in self.ydict[type].keys():
-                    self.ydict[type][i] = []
-                    self.ydict2[type][i] = []
-                self.ydict[type][i].append(alpha)
-                self.ydict2[type][i].append(beta)
-            if self.t > tf:
-                plt.figure(type)
-                for i in range(len(self.robots)):
-                    c = self.getRobotColor(i)
-                    curve1, = plt.plot(self.ts, self.ydict[type][i], '-', 
-                                      color = c, label = 'alpha')
-                    curve2, = plt.plot(self.ts, self.ydict2[type][i], '--', 
-                                      color = c, label = 'beta')
-                plt.legend(handles = [curve1, curve2])
-                plt.xlabel('t (s)')
-                plt.ylabel('angles (deg)')
-                plt.show()
-                self.ploted[type] = True     
-                
-        elif type == 7:
-            # Show observation1
-            for i in range(len(self.robots)):
-                plt.figure()
-                c = self.getRobotColor(i)
-                pc = self.robots[i].pointCloud
-                dist = pc.scanVector
-                angle = pc.scanAngle
-                for j in range(pc.lenScanVector):
-                    x = -dist[0, j] * math.cos(angle[j])
-                    y = -dist[0, j] * math.sin(angle[j])
-                    plt.plot([0, x], [0, y], '-', color = c)
-                plt.xlabel('x (m)')
-                plt.ylabel('y (m)')
-                plt.axes().set_aspect('equal')
-                plt.show()
-            self.ploted[type] = True
-            
-        elif type == 8:
-            # Show speed
-            
-            if 1 not in self.ydict[type].keys():
-                self.ydict[type][1] = []
-                self.ydict2[type][1] = []
-            self.ydict[type][1].append(self.robots[1].v1Desired)
-            self.ydict2[type][1].append(self.robots[1].v2Desired)
-            if self.t > tf:
-                plt.figure(type)
-                
-                c = self.getRobotColor(1)
-                curve1, = plt.plot(self.ts, self.ydict[type][1], '-', 
-                                  color = c, label = 'u1')
-                curve2, = plt.plot(self.ts, self.ydict2[type][1], '--', 
-                                  color = c, label = 'u2')
-                plt.legend(handles = [curve1, curve2])
-                plt.xlabel('t (s)')
-                plt.ylabel('v (m/s)')
-                plt.show()
-                self.ploted[type] = True            
-            
+
     def getRobotColor(self, i):
         if i == 0:
             c = (1, 0, 0)
@@ -665,10 +386,14 @@ class Scene():
     def getMaxFormationError(self):
         if 2 not in self.ydict.keys():
             raise Exception('Plot type 2 must be drawn in order to get formation error!')
+        if self.errorType == 0:
+            errors = self.ydict[2]
+        else:
+            errors = self.ydict[3]
         # check max formation error
         maxAbsError = 0
-        for key in self.ydict[2]:
-            absError = abs(self.ydict[2][key][-1])
+        for key in errors:
+            absError = abs(errors[key][-1])
             if absError > maxAbsError:
                 maxAbsError = absError
         return maxAbsError

@@ -7,18 +7,23 @@ To run this file, please open vrep file scene/scene_double.ttt first
 """
 
 from scene import Scene
+from sceneplot import ScenePlot
+
 # from robot import Robot
 import numpy as np
+import math
 # from data import Data
-from DeepFCL import DeepFCL
+#from DeepFCL import DeepFCL
 
-fcl = DeepFCL(50, 50, 2, 1)
+#fcl = DeepFCL(50, 50, 2, 1)
 
 def generateData():
     sc = Scene(recordData = True)
+    sp = ScenePlot(sc)
     #sc.occupancyMapType = sc.OCCUPANCY_MAP_THREE_CHANNEL
     sc.occupancyMapType = sc.OCCUPANCY_MAP_BINARY
     sc.dynamics = sc.DYNAMICS_MODEL_BASED_LINEAR # robot dynamics
+    sc.errorType = 1
     try:
         sc.addRobot(np.float32([[-2, 0, 0], [0.0, 0.0, 0.0]]), role = sc.ROLE_LEADER)
         sc.addRobot(np.float32([[1, 3, 0], [-1.0, 0.0, 0.0]]), role = sc.ROLE_FOLLOWER)
@@ -58,9 +63,13 @@ def generateData():
             sc.setVrepHandles(1, '#0')
         
         #sc.renderScene(waitTime = 3000)
-        tf = 30 # must be greater than 1
-        sc.resetPosition()
-        sc.plot(3, tf)
+        tf = 10 # must be greater than 1
+        errorCheckerEnabled = True
+        sc.resetPosition() # Random initial position
+        # Fixed initial position
+        #sc.robots[0].setPosition([0.0, 0.0, math.pi/2]) 
+        #sc.robots[1].setPosition([-2.2, -1.0, 0.3])
+        sp.plot(4, tf)
         while sc.simulate():
             #sc.renderScene(waitTime = int(sc.dt * 1000))
             sc.showOccupancyMap(waitTime = int(sc.dt * 1000))
@@ -70,16 +79,21 @@ def generateData():
             
             if sc.t > 1:
                 maxAbsError = sc.getMaxFormationError()
-                if maxAbsError < 0.01:
-                    tf = sc.t - 0.01
+                if maxAbsError < 0.01 and errorCheckerEnabled:
+                    #tf = sc.t - 0.01
+                    # set for how many seconds after convergence the simulator shall run
+                    tExtra = 3
+                    tf = sc.t + tExtra
+                    errorCheckerEnabled = False
+                    print('Ending in ', str(tExtra), ' seconds...')
             
-            #sc.plot(0, tf)
-            sc.plot(2, tf)
-            #sc.plot(1, tf) 
-            sc.plot(3, tf)
-            sc.plot(4, tf)
-            sc.plot(5, tf)
-            sc.plot(6, tf)
+            #sp.plot(0, tf)
+            sp.plot(2, tf)
+            #sp.plot(1, tf) 
+            sp.plot(3, tf)
+            sp.plot(4, tf)
+            sp.plot(5, tf)
+            sp.plot(6, tf)
             if sc.t > tf:
                 print('maxAbsError = ', maxAbsError)
                 break
@@ -97,6 +111,14 @@ def generateData():
         x = input('Quit?(y/n)')
         sc.deallocate()
         if x == 'y' or x == 'Y':
+            tf = sc.t - 0.01
+            #sp.plot(0, tf)
+            sp.plot(2, tf)
+            #sp.plot(1, tf) 
+            sp.plot(3, tf)
+            sp.plot(4, tf)
+            sp.plot(5, tf)
+            sp.plot(6, tf)
             raise Exception('Aborted.')
         
     except:
@@ -109,8 +131,12 @@ def generateData():
         return sc
     else:
         return None
+
+
+
 # main
-numRun = 3
+import saver
+numRun = 1
 dataList = []
 
 
@@ -120,6 +146,7 @@ for i in range(0, numRun):
     sc = generateData()
     if sc is not None:
         # if the list is empty
+        saver.save(sc) # save data
         if not dataList:
             for robot in sc.robots:
                 dataList.append(robot.data)

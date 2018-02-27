@@ -124,9 +124,11 @@ class DeepFCL:
         # Training -------------------------------------------------------
         init = tf.global_variables_initializer()
         num_epochs = 150
+
 #        saver = tf.train.Saver()
 #        current_dir = os.getcwd()
 #        save_path = os.path.join(current_dir + '/models/')
+
         
         with tf.Session() as sess:
             sess.run(init)
@@ -178,7 +180,7 @@ class DeepFCL:
             # load the model and output action
 #            self.saver.restore(sess, os.path.join(self.save_path, 'model_epi' + str(150-1)))
         act_output = self.sess.run(self.out, feed_dict = {self.obs_var: observations})
-            
+           
         return act_output
         
         
@@ -197,11 +199,13 @@ if __name__ == '__main__':
 #                            name='Observation-State-Mapping Applied to Training Data -- Simple Navigation Task',
 #                            add_colorbar=True)
     
+
 #    print('Loading and displaying testing data ... ')
 #    testing_data = np.load('fcl_data1.npz')
 #    
 #    print('Testing a policy ... ')    
 #    testing_ctrls = fcl.test(testing_data['observations'])
+
 
 
 

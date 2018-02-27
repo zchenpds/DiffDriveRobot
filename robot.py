@@ -22,8 +22,6 @@ import time
 LIMIT_MAX_ACC = False
 accMax = 0.5 # m/s^2
 
-REFERENCE_TRAJECTORY_OMEGA = 0.2
-
 class Robot():
     def __init__(self, scene):
         self.scene = scene
@@ -62,10 +60,10 @@ class Robot():
         
     def propagateDesired(self):
         if self.dynamics == 4 or self.dynamics == 11:
-            # Circular desired trajectory
+            # Circular desired trajectory, depricated.
             t = self.scene.t
             radius = 2
-            omega = REFERENCE_TRAJECTORY_OMEGA
+            omega = 0.2
             theta0 = math.atan2(self.xid0.y, self.xid0.x)
             rho0 = (self.xid0.x ** 2 + self.xid0.y ** 2) ** 0.5
             self.xid.x = (radius * math.cos(omega * t) +

@@ -7,12 +7,14 @@ This test file is dependent on vrep.
 """
 
 from scene import Scene
+from sceneplot import ScenePlot
 # from robot import Robot
 import numpy as np
 # from data import Data
 
 def generateData(**kwargs):
     sc = Scene(recordData = True)
+    sp = ScenePlot(sc)
     try:
         #dynamics = 20
         arg2 = np.float32([.5, .5])
@@ -57,7 +59,7 @@ def generateData(**kwargs):
         
         #sc.renderScene(waitTime = 3000)
         tf = 30
-        sc.plot(3, tf)
+        sp.plot(3, tf)
         while sc.simulate():
             #sc.renderScene(waitTime = int(sc.dt * 1000))
             #sc.showOccupancyMap(waitTime = int(sc.dt * 1000))
@@ -65,13 +67,13 @@ def generateData(**kwargs):
             #print("---------------------")
             #print("t = %.3f" % sc.t, "s")
             
-            #sc.plot(0, tf)
-            #sc.plot(1, tf)
-            #sc.plot(2, tf) 
-            sc.plot(3, tf)
-            sc.plot(4, tf)
-            sc.plot(5, tf)
-            sc.plot(6, tf)
+            #sp.plot(0, tf)
+            #sp.plot(1, tf)
+            #sp.plot(2, tf) 
+            sp.plot(3, tf)
+            sp.plot(4, tf)
+            sp.plot(5, tf)
+            sp.plot(6, tf)
             if sc.t > tf:
                 break
         sc.deallocate()

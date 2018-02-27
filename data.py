@@ -5,6 +5,7 @@ Created on Thu Feb  1 11:49:17 2018
 @author: Zhuo Chen
 """
 import numpy as np
+import os
 
 class Data():
     def __init__(self, robot):
@@ -53,7 +54,10 @@ class Data():
     
     def store(self):
         i = self.robot.index
-        np.savez('data/data'+str(i), 
+        directory = 'data'
+        if not os.path.exists(directory):
+            os.makedirs(directory)
+        np.savez(os.path.join(directory, 'data' + str(i)), 
                  epi_starts = self.epi_starts,
                  observations = self.observations,
                  observations1 = self.observations1,
