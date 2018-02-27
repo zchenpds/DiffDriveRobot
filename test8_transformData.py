@@ -8,7 +8,7 @@ import os
 import numpy as np
 import sys
 
-dk = 5
+dk = 1
 dataIn = np.load(os.path.join('data', '2-25', 'data1.npz'))
 N = len(dataIn['epi_starts'])
 lenObservation = dataIn['observations'].shape[1]
@@ -32,14 +32,13 @@ while k < N:
                                                dataIn['observations'][k3:k2], axis = 1), 
                                      axis = 0)
             actions = np.append(actions, dataIn['actions'][k1:k4], axis = 0)
-            actions_1 = np.append(actions, dataIn['actions'][k3:k2], axis = 0)
+            actions_1 = np.append(actions_1, dataIn['actions'][k3:k2], axis = 0)
         k1 = k
     else:
         epi_starts = np.append(epi_starts, False)
     
     
-    sys.stdout.write('\r')
-    sys.stdout.write("%.3f%%" % (k/N*100))
+    sys.stdout.write("\r%.3f%%" % (k/N*100))
     sys.stdout.flush()
     
     k += 1

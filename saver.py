@@ -21,7 +21,9 @@ def save(sc):
         if count < n:
             count = n
     count += 1
-    
+    for robot in sc.robots:
+        if robot.learnedController is not None:
+            robot.learnedController = None
     with open(os.path.join(directory, 'sc'+str(count).zfill(3)+'.pkl'), 'wb') as f:
         pickle.dump(sc, f)
 
