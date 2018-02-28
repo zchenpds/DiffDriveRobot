@@ -20,6 +20,7 @@ import math
 def generateData():
     sc = Scene(recordData = True)
     sp = ScenePlot(sc)
+    sp.saveEnabled = False # Do not save plots as files
     #sc.occupancyMapType = sc.OCCUPANCY_MAP_THREE_CHANNEL
     sc.occupancyMapType = sc.OCCUPANCY_MAP_BINARY
     sc.dynamics = sc.DYNAMICS_MODEL_BASED_LINEAR # robot dynamics
@@ -63,7 +64,7 @@ def generateData():
             sc.setVrepHandles(1, '#0')
         
         #sc.renderScene(waitTime = 3000)
-        tf = 30 # must be greater than 1
+        tf = 3 # must be greater than 1
         errorCheckerEnabled = True
         sc.resetPosition() # Random initial position
         # Fixed initial position
@@ -99,13 +100,6 @@ def generateData():
                 break
             
             
-                
-        
-            #print('robot 0: ', sc.robots[0].xi.x, ', ', sc.robots[0].xi.y, ', ', sc.robots[0].xi.theta)
-            #print('robot 1: ', sc.robots[1].xi.x, ', ', sc.robots[1].xi.y, ', ', sc.robots[1].xi.theta)
-            #print('robot 2: ', sc.robots[2].xi.x, ', ', sc.robots[2].xi.y, ', ', sc.robots[2].xi.theta)
-            #print('y01: ' + str(sc.robots[1].xi.y - sc.robots[0].xi.y))
-            #print('x02: ' + str(sc.robots[2].xi.x - sc.robots[0].xi.x))
         sc.deallocate()
     except KeyboardInterrupt:
         x = input('Quit?(y/n)')
