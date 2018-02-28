@@ -18,8 +18,8 @@ class ScenePlot():
         self.TYPE_TIME_BEARING_ERROR = 3
         self.TYPE_TIME_ACTIONS = 6
         
-        self.SAVE_ENABLED = True
-        if self.SAVE_ENABLED == True:
+        self.saveEnabled = True
+        if self.saveEnabled == True:
             directory = 'fig'
             if not os.path.exists(directory):
                 os.makedirs(directory)
@@ -395,7 +395,7 @@ class ScenePlot():
         
         if self.sc.t > tf:
             plt.grid(True)
-            if self.SAVE_ENABLED == True:
+            if self.saveEnabled == True:
                 # Save plot as eps file
                 path = os.path.join(self.directory, 'fig' + str(type).zfill(2) + '.eps')
                 plt.savefig(path, format='eps', dpi=1000)

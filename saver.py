@@ -22,6 +22,7 @@ def save(sc):
             count = n
     count += 1
     for robot in sc.robots:
+        robot.data.q = None
         if robot.learnedController is not None:
             robot.learnedController = None
     with open(os.path.join(directory, 'sc'+str(count).zfill(3)+'.pkl'), 'wb') as f:

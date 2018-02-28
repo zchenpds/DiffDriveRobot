@@ -19,7 +19,7 @@ import random
 from state import State
 
 
-REFERENCE_SPEED = 0.5
+REFERENCE_SPEED = 0.3
 REFERENCE_THETA_DOT = 0.0
 
 class Scene():
