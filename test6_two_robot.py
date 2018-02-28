@@ -12,9 +12,9 @@ from sceneplot import ScenePlot
 # from robot import Robot
 import numpy as np
 # from data import Data
-from DeepFCL import DeepFCL
+from DeepFCL2 import DeepFCL
 
-fcl = DeepFCL(50, 50, 2, 1)
+fcl = DeepFCL(50, 50, 2, 2)
 sc = None
 def generateData():
     sc = Scene(recordData = True)
