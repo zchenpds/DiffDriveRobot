@@ -153,7 +153,7 @@ class ScenePlot():
                 for i in range(1, len(self.sc.robots)):
                     plt.plot(self.sc.ts, errors[i], '-')
                 plt.xlabel('t (s)')
-                plt.ylabel('Separation Error (rad)')
+                plt.ylabel('Separation Error (m)')
         elif type == 3: # Formation Error type 2
             if not self.sc.ploted[type]:
                 for i in range(1, len(self.sc.robots)):

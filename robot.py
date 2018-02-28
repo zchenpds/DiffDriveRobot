@@ -18,6 +18,7 @@ import vrep
 from data import Data
 from pointcloud import PointCloud
 import time
+import queue
 
 LIMIT_MAX_ACC = False
 accMax = 0.5 # m/s^2
@@ -44,6 +45,7 @@ class Robot():
         
         #
         self.pointCloud = PointCloud(self)
+        self.q = queue.Queue()
         
         # Data to be recorded
         self.recordData = False
@@ -154,8 +156,21 @@ class Robot():
     
     def control(self):
         if self.learnedController is not None:
-            action = self.learnedController(self.pointCloud.getObservation())
-            #action = np.array([0, 0])
+            mode = self.learnedController()
+            if mode == 0:
+                action = self.learnedController(self.pointCloud.getObservation())
+            elif mode > 0:
+                obs0 = self.pointCloud.getObservation()
+                act0 = self.getV1V2()
+                if self.q.qsize() == mode:
+                    obs1, act1 = self.q.get()
+                    obs = np.concatenate((obs0, obs1), axis = 1)
+                    act = act1
+                    action = self.learnedController(obs, act)
+                else:
+                    action = np.array([[0, 0]])
+                self.q.put((obs0, act0))
+            #action = np.array([[0, 0]])
             v1 = action[0, 0]
             v2 = action[0, 1]
             
@@ -256,7 +271,7 @@ class Robot():
         
         #print("v1 = %.3f" % v1, "m/s, v2 = %.3f" % v2)
         
-        vm = 0.6 # wheel's max linear speed in m/s
+        vm = 0.8 # wheel's max linear speed in m/s
         # Find the factor for converting linear speed to angular speed
         if math.fabs(v2) >= math.fabs(v1) and math.fabs(v2) > vm:
             alpha = vm / math.fabs(v2)
@@ -467,5 +482,12 @@ class Robot():
             pass
         else:
             return
-
+    def getV1V2(self):
+        v1 = self.vActual + self.omegaActual * self.l / 2
+        v2 = self.vActual - self.omegaActual * self.l / 2
+        return np.array([[v1, v2]])
+        
+        
+        
+        
         

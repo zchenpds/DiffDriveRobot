@@ -63,7 +63,7 @@ def generateData():
             sc.setVrepHandles(1, '#0')
         
         #sc.renderScene(waitTime = 3000)
-        tf = 10 # must be greater than 1
+        tf = 30 # must be greater than 1
         errorCheckerEnabled = True
         sc.resetPosition() # Random initial position
         # Fixed initial position
@@ -82,7 +82,7 @@ def generateData():
                 if maxAbsError < 0.01 and errorCheckerEnabled:
                     #tf = sc.t - 0.01
                     # set for how many seconds after convergence the simulator shall run
-                    tExtra = 3
+                    tExtra = 8
                     tf = sc.t + tExtra
                     errorCheckerEnabled = False
                     print('Ending in ', str(tExtra), ' seconds...')
@@ -136,7 +136,7 @@ def generateData():
 
 # main
 import saver
-numRun = 1
+numRun = 3
 dataList = []
 
 
