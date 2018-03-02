@@ -18,10 +18,6 @@ import math
 import random
 from state import State
 
-
-REFERENCE_SPEED = 0.3
-REFERENCE_THETA_DOT = 0.0
-
 class Scene():
     def __init__(self, recordData = False):
         self.t = 0
@@ -262,16 +258,17 @@ class Scene():
         t = self.t
         dt = self.dt
         sDot = 0
-        thetaDot = 0
+        thetaDot = 0        
         if self.dynamics == 13:
             t1 = 1
-            speed = REFERENCE_SPEED
+            speed = self.referenceSpeed
+            omega = self.referenceOmega
             if t < t1:
                 sDot = t / t1 * speed
-                thetaDot = t / t1 * REFERENCE_THETA_DOT
+                thetaDot = t / t1 * omega
             else:
                 sDot = speed
-                thetaDot = REFERENCE_THETA_DOT
+                thetaDot = omega
         self.xid.x += sDot * dt * math.cos(self.xid.theta)
         self.xid.y += sDot * dt * math.sin(self.xid.theta)
         self.xid.theta += thetaDot * dt
@@ -373,15 +370,6 @@ class Scene():
             cv2.imshow('Occupancy Map', im)
         cv2.waitKey(waitTime)
         
-
-    def getRobotColor(self, i):
-        if i == 0:
-            c = (1, 0, 0)
-        elif i == 1:
-            c = (0, 1, 0)
-        elif i == 2:
-            c = (0, 0, 1)
-        return c
     
     def getMaxFormationError(self):
         if 2 not in self.ydict.keys():

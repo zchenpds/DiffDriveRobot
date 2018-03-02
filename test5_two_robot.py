@@ -12,15 +12,25 @@ from sceneplot import ScenePlot
 # from robot import Robot
 import numpy as np
 import math
+import random
 # from data import Data
 #from DeepFCL import DeepFCL
 
 #fcl = DeepFCL(50, 50, 2, 1)
 
+def initRef(sc):
+    radiusLeaderList = [2.0, 3.0, 4.0]
+    speedLeaderList = [0.2, 0.3, 0.4]
+    radiusLeader = random.choice(radiusLeaderList)
+    sc.referenceSpeed = random.choice(speedLeaderList)
+    sc.referenceOmega = sc.referenceSpeed / radiusLeader
+    print('Ref speed:', sc.referenceSpeed, '; Ref omega: ', sc.referenceOmega)
+        
+
 def generateData():
     sc = Scene(recordData = True)
     sp = ScenePlot(sc)
-    sp.saveEnabled = False # Do not save plots as files
+    sp.saveEnabled = True # save plots?
     #sc.occupancyMapType = sc.OCCUPANCY_MAP_THREE_CHANNEL
     sc.occupancyMapType = sc.OCCUPANCY_MAP_BINARY
     sc.dynamics = sc.DYNAMICS_MODEL_BASED_LINEAR # robot dynamics
@@ -64,8 +74,9 @@ def generateData():
             sc.setVrepHandles(1, '#0')
         
         #sc.renderScene(waitTime = 3000)
-        tf = 3 # must be greater than 1
+        tf = 30 # must be greater than 1
         errorCheckerEnabled = True
+        initRef(sc)
         sc.resetPosition() # Random initial position
         # Fixed initial position
         #sc.robots[0].setPosition([0.0, 0.0, math.pi/2]) 
@@ -83,7 +94,7 @@ def generateData():
                 if maxAbsError < 0.01 and errorCheckerEnabled:
                     #tf = sc.t - 0.01
                     # set for how many seconds after convergence the simulator shall run
-                    tExtra = 8
+                    tExtra = 10
                     tf = sc.t + tExtra
                     errorCheckerEnabled = False
                     print('Ending in ', str(tExtra), ' seconds...')
@@ -93,7 +104,7 @@ def generateData():
             #sp.plot(1, tf) 
             sp.plot(3, tf)
             sp.plot(4, tf)
-            sp.plot(5, tf)
+            #sp.plot(5, tf)
             sp.plot(6, tf)
             if sc.t > tf:
                 print('maxAbsError = ', maxAbsError)
@@ -111,7 +122,7 @@ def generateData():
             #sp.plot(1, tf) 
             sp.plot(3, tf)
             sp.plot(4, tf)
-            sp.plot(5, tf)
+            #sp.plot(5, tf)
             sp.plot(6, tf)
             raise Exception('Aborted.')
         
@@ -130,7 +141,7 @@ def generateData():
 
 # main
 import saver
-numRun = 3
+numRun = 1
 dataList = []
 
 
