@@ -20,7 +20,7 @@ import math
 def generateData():
     sc = Scene(recordData = True)
     sp = ScenePlot(sc)
-    sp.saveEnabled = False # Do not save plots as files
+    sp.saveEnabled = True # Do not save plots as files
     #sc.occupancyMapType = sc.OCCUPANCY_MAP_THREE_CHANNEL
     sc.occupancyMapType = sc.OCCUPANCY_MAP_BINARY
     sc.dynamics = sc.DYNAMICS_MODEL_BASED_LINEAR # robot dynamics
@@ -64,7 +64,7 @@ def generateData():
             sc.setVrepHandles(1, '#0')
         
         #sc.renderScene(waitTime = 3000)
-        tf = 3 # must be greater than 1
+        tf = 30 # must be greater than 1
         errorCheckerEnabled = True
         sc.resetPosition() # Random initial position
         # Fixed initial position
@@ -93,8 +93,8 @@ def generateData():
             #sp.plot(1, tf) 
             sp.plot(3, tf)
             sp.plot(4, tf)
-            sp.plot(5, tf)
-            sp.plot(6, tf)
+            #sp.plot(5, tf)
+            #sp.plot(6, tf)
             if sc.t > tf:
                 print('maxAbsError = ', maxAbsError)
                 break
@@ -111,8 +111,8 @@ def generateData():
             #sp.plot(1, tf) 
             sp.plot(3, tf)
             sp.plot(4, tf)
-            sp.plot(5, tf)
-            sp.plot(6, tf)
+            #sp.plot(5, tf)
+            #sp.plot(6, tf)
             raise Exception('Aborted.')
         
     except:
@@ -130,7 +130,7 @@ def generateData():
 
 # main
 import saver
-numRun = 3
+numRun = 500
 dataList = []
 
 

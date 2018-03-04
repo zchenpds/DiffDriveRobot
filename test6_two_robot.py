@@ -24,8 +24,8 @@ def generateData():
     sc.dynamics = sc.DYNAMICS_MODEL_BASED_LINEAR # robot dynamics
     try:
         sc.addRobot(np.float32([[-2, 0, 0], [0.0, 0.0, 0.0]]), role = sc.ROLE_LEADER)
-#        sc.addRobot(np.float32([[1, 3, 0], [-1.0, 0.0, 0.0]]), role = sc.ROLE_FOLLOWER)
-        sc.addRobot(np.float32([[1, 3, 0], [-1.0, 0.0, 0.0]]), role = sc.ROLE_FOLLOWER, learnedController = fcl.test)
+        sc.addRobot(np.float32([[1, 3, 0], [-1.0, 0.0, 0.0]]), role = sc.ROLE_FOLLOWER)
+#        sc.addRobot(np.float32([[1, 3, 0], [-1.0, 0.0, 0.0]]), role = sc.ROLE_FOLLOWER, learnedController = fcl.test)
 #==============================================================================
 #         sc.addRobot(np.float32([[1, 3, 0], [0, -1, 0]]), 
 #                     dynamics = sc.DYNAMICS_LEARNED, 
