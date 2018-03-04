@@ -10,7 +10,7 @@ import queue
 
 class Data():
     def __init__(self, robot):
-        self.mode = 0
+        self.mode = 1
         self.q = queue.Queue()
         
         self.robot = robot
@@ -74,7 +74,8 @@ class Data():
                     leaderXi.x - followerXi.x, leaderXi.y - followerXi.y, # 5, 6
                     followerXid.vx, followerXid.vy, # 7, 8
                     leaderXi.theta, followerXi.theta, # 9, 10
-                    leaderXi.theta - followerXi.theta # 11
+                    leaderXi.theta - followerXi.theta, # 11
+                    leaderXi.vx, leaderXi.vy # 12, 13
                     ]]
         self.d['obs2'] = np.append(self.d['obs2'], obs2Data, axis = 0)
         self.d['actions'] = np.append(self.d['actions'], 
