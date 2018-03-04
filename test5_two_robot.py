@@ -24,11 +24,14 @@ def initRef(sc):
     radiusLeader = random.choice(radiusLeaderList)
     sc.referenceSpeed = random.choice(speedLeaderList)
     sc.referenceOmega = sc.referenceSpeed / radiusLeader
-    print('Ref speed:', sc.referenceSpeed, '; Ref omega: ', sc.referenceOmega)
-        
+    message = "Ref speed: {0:.3f} m/s; Ref omega: {1:.3f} rad/s; Ref radius: {2:.3f} m"
+    message = message.format(sc.referenceSpeed, sc.referenceOmega, radiusLeader)
+    sc.log(message)
+    print(message)
+
 
 def generateData():
-    sc = Scene(recordData = True)
+    sc = Scene(fileName = __file__, recordData = True)
     sp = ScenePlot(sc)
     sp.saveEnabled = True # save plots?
     #sc.occupancyMapType = sc.OCCUPANCY_MAP_THREE_CHANNEL
@@ -74,7 +77,7 @@ def generateData():
             sc.setVrepHandles(1, '#0')
         
         #sc.renderScene(waitTime = 3000)
-        tf = 30 # must be greater than 1
+        tf = 3 # must be greater than 1
         errorCheckerEnabled = True
         initRef(sc)
         sc.resetPosition() # Random initial position
@@ -107,7 +110,9 @@ def generateData():
             #sp.plot(5, tf)
             sp.plot(6, tf)
             if sc.t > tf:
-                print('maxAbsError = ', maxAbsError)
+                message = "maxAbsError = {0:.3f} m".format(maxAbsError)
+                sc.log(message)
+                print(message)
                 break
             
             
@@ -141,7 +146,7 @@ def generateData():
 
 # main
 import saver
-numRun = 1
+numRun = 3
 dataList = []
 
 

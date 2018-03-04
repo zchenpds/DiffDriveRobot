@@ -410,7 +410,9 @@ class ScenePlot():
                 # Save plot as eps file
                 path = os.path.join(self.directory, 'fig' + str(type).zfill(2) + '.eps')
                 plt.savefig(path, format='eps', dpi=1000)
-                print("Plot saved to ", path)
+                message = "Plot saved to " + str(path)
+                self.sc.log(message)
+                print(message)
                 plt.show()
             else:
                 plt.show()

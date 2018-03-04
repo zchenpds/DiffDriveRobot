@@ -391,6 +391,9 @@ class Robot():
                 [x0, y0, z0], vrep.simx_opmode_oneshot)
         vrep.simxSetObjectOrientation(self.scene.clientID, self.robotHandle, -1, 
                 [0, 0, theta0], vrep.simx_opmode_oneshot)
+        message = "Robot #" + str(self.index) + "'s pose is set to " 
+        message += "[{0:.3f}, {1:.3f}, {2:.3f}]".format(x0, y0, theta0)
+        self.scene.log(message)
 
     def readSensorData(self):
         if self.scene.vrepConnected == False:

@@ -25,10 +25,16 @@ def save(sc):
         robot.data.q = None
         if robot.learnedController is not None:
             robot.learnedController = None
-    with open(os.path.join(directory, 'sc'+str(count).zfill(3)+'.pkl'), 'wb') as f:
+    path = os.path.join(directory, 'sc'+str(count).zfill(3)+'.pkl')
+    with open(path, 'wb') as f:
         pickle.dump(sc, f)
-
+    sc.log("Scene is written to " + path + '\n')
+    
 def load(count):
-    with open(os.path.join(directory, 'sc'+str(count).zfill(3)+'.pkl'), 'rb') as f:
+    path = os.path.join(directory, 'sc'+str(count).zfill(3)+'.pkl')
+    with open(path, 'rb') as f:
         sc = pickle.load(f)
         return sc
+    
+    
+    
