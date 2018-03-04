@@ -16,14 +16,12 @@ from robot import Robot
 import vrep
 import math
 import random
+import datetime
+import os
 from state import State
 
-
-REFERENCE_SPEED = 0.3
-REFERENCE_THETA_DOT = 0.0
-
 class Scene():
-    def __init__(self, recordData = False):
+    def __init__(self, fileName = "Untitled", recordData = False):
         self.t = 0
         self.dt = 0.01
         
@@ -72,6 +70,9 @@ class Scene():
         self.ROLE_FOLLOWER = 1
         
         self.errorType = 1
+        self.logPriorityMax = 1 # Messages with lower priorities are not logged
+        self.logFileName = os.path.splitext(fileName)[0] + ".log"
+        self.log('A new scene is created.')
         
     def addRobot(self, arg, arg2 = np.float32([.5, .5]), 
                  role = 1, learnedController = None):
@@ -100,6 +101,21 @@ class Scene():
             robot.recordData = self.recordData
         
         self.robots.append(robot)
+        
+        message = ""
+        if robot.role == 0:
+            message += "Leader"
+        elif robot.role == 1:
+            message += "Follower"
+        else:
+            message += "Type-unkonwn"
+        message += " robot #" + str(robot.index) + " using "
+        if learnedController is None:
+            message += "a model-based controller"
+        else:
+            message += "a leanrned controller"
+        message += " is added to the scene"
+        self.log(message)
     
     def setADjMatrix(self, adjMatrix):
         self.adjMatrix = adjMatrix
@@ -262,16 +278,17 @@ class Scene():
         t = self.t
         dt = self.dt
         sDot = 0
-        thetaDot = 0
+        thetaDot = 0        
         if self.dynamics == 13:
             t1 = 1
-            speed = REFERENCE_SPEED
+            speed = self.referenceSpeed
+            omega = self.referenceOmega
             if t < t1:
                 sDot = t / t1 * speed
-                thetaDot = t / t1 * REFERENCE_THETA_DOT
+                thetaDot = t / t1 * omega
             else:
                 sDot = speed
-                thetaDot = REFERENCE_THETA_DOT
+                thetaDot = omega
         self.xid.x += sDot * dt * math.cos(self.xid.theta)
         self.xid.y += sDot * dt * math.sin(self.xid.theta)
         self.xid.theta += thetaDot * dt
@@ -373,15 +390,6 @@ class Scene():
             cv2.imshow('Occupancy Map', im)
         cv2.waitKey(waitTime)
         
-
-    def getRobotColor(self, i):
-        if i == 0:
-            c = (1, 0, 0)
-        elif i == 1:
-            c = (0, 1, 0)
-        elif i == 2:
-            c = (0, 0, 1)
-        return c
     
     def getMaxFormationError(self):
         if 2 not in self.ydict.keys():
@@ -414,6 +422,7 @@ class Scene():
     
     
     def deallocate(self):
+        self.log("Scene is destructed")
         if USE_CV2 == True:
             cv2.destroyAllWindows() # Add this to fix the window freezing bug
         
@@ -428,7 +437,12 @@ class Scene():
             vrep.simxFinish(self.clientID)
             
             
-    
+    def log(self, message, priority=1):
+        if priority <= self.logPriorityMax:
+            with open(self.logFileName, "a+" ) as f:
+                prefix = '[' + str(datetime.datetime.now()) + "] [sim time: {0:.3f} s] "
+                prefix = prefix.format(self.t)
+                f.write(prefix + message + '\n')
     
     
     

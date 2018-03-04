@@ -12,15 +12,28 @@ from sceneplot import ScenePlot
 # from robot import Robot
 import numpy as np
 import math
+import random
 # from data import Data
 #from DeepFCL import DeepFCL
 
 #fcl = DeepFCL(50, 50, 2, 1)
 
+def initRef(sc):
+    radiusLeaderList = [2.0, 3.0, 4.0]
+    speedLeaderList = [0.2, 0.3, 0.4]
+    radiusLeader = random.choice(radiusLeaderList)
+    sc.referenceSpeed = random.choice(speedLeaderList)
+    sc.referenceOmega = sc.referenceSpeed / radiusLeader
+    message = "Ref speed: {0:.3f} m/s; Ref omega: {1:.3f} rad/s; Ref radius: {2:.3f} m"
+    message = message.format(sc.referenceSpeed, sc.referenceOmega, radiusLeader)
+    sc.log(message)
+    print(message)
+
+
 def generateData():
-    sc = Scene(recordData = True)
+    sc = Scene(fileName = __file__, recordData = True)
     sp = ScenePlot(sc)
-    sp.saveEnabled = True # Do not save plots as files
+    sp.saveEnabled = True # save plots?
     #sc.occupancyMapType = sc.OCCUPANCY_MAP_THREE_CHANNEL
     sc.occupancyMapType = sc.OCCUPANCY_MAP_BINARY
     sc.dynamics = sc.DYNAMICS_MODEL_BASED_LINEAR # robot dynamics
@@ -66,6 +79,7 @@ def generateData():
         #sc.renderScene(waitTime = 3000)
         tf = 30 # must be greater than 1
         errorCheckerEnabled = True
+        initRef(sc)
         sc.resetPosition() # Random initial position
         # Fixed initial position
         #sc.robots[0].setPosition([0.0, 0.0, math.pi/2]) 
@@ -83,7 +97,7 @@ def generateData():
                 if maxAbsError < 0.01 and errorCheckerEnabled:
                     #tf = sc.t - 0.01
                     # set for how many seconds after convergence the simulator shall run
-                    tExtra = 8
+                    tExtra = 10
                     tf = sc.t + tExtra
                     errorCheckerEnabled = False
                     print('Ending in ', str(tExtra), ' seconds...')
@@ -96,7 +110,9 @@ def generateData():
             #sp.plot(5, tf)
             #sp.plot(6, tf)
             if sc.t > tf:
-                print('maxAbsError = ', maxAbsError)
+                message = "maxAbsError = {0:.3f} m".format(maxAbsError)
+                sc.log(message)
+                print(message)
                 break
             
             

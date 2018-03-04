@@ -115,6 +115,8 @@ class Robot():
             self.xid.vx = sDot * math.cos(theta) - rho0 * thetaDot * math.sin(theta + theta0)
             self.xid.vy = sDot * math.sin(theta) + rho0 * thetaDot * math.cos(theta + theta0)
             #print('vx: ', self.xid.vx, 'vy:', self.xid.vy)
+            #print('v', self.index, ' = ', (self.xid.vx**2 + self.xid.vy**2)**0.5)
+            
             if (self.xid.vx**2 + self.xid.vy**2)**0.5 > 1e-3:
                 self.xid.theta = math.atan2(self.xid.vy, self.xid.vx)
             #self.xid.omega = omega
@@ -263,7 +265,7 @@ class Robot():
         
         #print("v1 = %.3f" % v1, "m/s, v2 = %.3f" % v2)
         
-        vm = 0.6 # wheel's max linear speed in m/s
+        vm = 0.7 # wheel's max linear speed in m/s
         # Find the factor for converting linear speed to angular speed
         if math.fabs(v2) >= math.fabs(v1) and math.fabs(v2) > vm:
             alpha = vm / math.fabs(v2)
@@ -389,6 +391,9 @@ class Robot():
                 [x0, y0, z0], vrep.simx_opmode_oneshot)
         vrep.simxSetObjectOrientation(self.scene.clientID, self.robotHandle, -1, 
                 [0, 0, theta0], vrep.simx_opmode_oneshot)
+        message = "Robot #" + str(self.index) + "'s pose is set to " 
+        message += "[{0:.3f}, {1:.3f}, {2:.3f}]".format(x0, y0, theta0)
+        self.scene.log(message)
 
     def readSensorData(self):
         if self.scene.vrepConnected == False:

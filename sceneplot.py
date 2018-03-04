@@ -12,13 +12,13 @@ import os
 
 
 class ScenePlot():
-    def __init__(self, scene = None):
+    def __init__(self, scene = None, saveEnabled = True):
         self.sc = scene
         self.TYPE_TIME_SEPARATION_ERROR = 2
         self.TYPE_TIME_BEARING_ERROR = 3
         self.TYPE_TIME_ACTIONS = 6
         
-        self.saveEnabled = True
+        self.saveEnabled = saveEnabled
         if self.saveEnabled == True:
             directory = 'fig'
             if not os.path.exists(directory):
@@ -34,6 +34,17 @@ class ScenePlot():
             count = count + 1
             self.directory = os.path.join(self.directory, str(count).zfill(3))
             os.makedirs(self.directory)
+            
+            
+    def getRobotColor(self, i):
+        brightness = 0.7
+        if i == 0:
+            c = (brightness, 0, 0)
+        elif i == 1:
+            c = (0, brightness, 0)
+        elif i == 2:
+            c = (0, 0, brightness)
+        return c
         
     def plot(self, type = 0, tf = 0):
         # type 0: (t, x_i - x_id)
@@ -231,7 +242,7 @@ class ScenePlot():
             if self.sc.t > tf:
                 plt.figure(type)
                 for i in range(len(self.sc.robots)):
-                    c = self.sc.getRobotColor(i)
+                    c = self.getRobotColor(i)
                     plt.plot(self.sc.ydict2[type][i][:, 0], 
                              self.sc.ydict2[type][i][:, 1], 
                              '-', color = c)
@@ -249,7 +260,7 @@ class ScenePlot():
                         y1 = self.sc.ydict[type][i][j, 1]
                         x2 = self.sc.ydict[type][(i+1)%l][j, 0]
                         y2 = self.sc.ydict[type][(i+1)%l][j, 1]
-                        plt.plot([x1, x2], [y1, y2], '-', color = (0, 0, 0))
+                        plt.plot([x1, x2], [y1, y2], ':', color = (0, 0, 0))
                         
                 # Plot center trajectory
                 for j in range(len(self.sc.tss)):
@@ -286,7 +297,7 @@ class ScenePlot():
             if self.sc.t > tf:
                 plt.figure(type)
                 for i in range(len(self.sc.robots)):
-                    c = self.sc.getRobotColor(i)
+                    c = self.getRobotColor(i)
                     curve1, = plt.plot(self.sc.ts, self.sc.ydict[type][i], '-', 
                                       color = c, label = 'Actual')
                     curve2, = plt.plot(self.sc.ts, self.sc.ydict2[type][i], '--', 
@@ -310,7 +321,7 @@ class ScenePlot():
                 plt.figure(type)
                 for i in range(1, len(self.sc.robots)): # Show only the follower
                 #for i in range(len(self.sc.robots)): # Show both the follower and the leader
-                    c = self.sc.getRobotColor(i)
+                    c = self.getRobotColor(i)
                     curve1, = plt.plot(self.sc.ts, self.sc.ydict[type][i], ':', 
                                       color = c, label = 'Left Wheel Velocity')
                     curve2, = plt.plot(self.sc.ts, self.sc.ydict2[type][i], '--', 
@@ -337,7 +348,7 @@ class ScenePlot():
             if self.sc.t > tf:
                 plt.figure(type)
                 for i in range(len(self.sc.robots)):
-                    c = self.sc.getRobotColor(i)
+                    c = self.getRobotColor(i)
                     curve1, = plt.plot(self.sc.ts, self.sc.ydict[type][i], '-', 
                                       color = c, label = 'Actual')
                     curve2, = plt.plot(self.sc.ts, self.sc.ydict2[type][i], '--', 
@@ -364,7 +375,7 @@ class ScenePlot():
                     return
                 plt.figure(type)
                 for i in range(len(self.sc.robots)):
-                    c = self.sc.getRobotColor(i)
+                    c = self.getRobotColor(i)
                     curve1, = plt.plot(self.sc.ts, self.sc.ydict[type][i], '-', 
                                       color = c, label = 'alpha')
                     curve2, = plt.plot(self.sc.ts, self.sc.ydict2[type][i], '--', 
@@ -377,7 +388,7 @@ class ScenePlot():
             # Show observation1
             for i in range(len(self.sc.robots)):
                 plt.figure(type)
-                c = self.sc.getRobotColor(i)
+                c = self.getRobotColor(i)
                 pc = self.sc.robots[i].pointCloud
                 dist = pc.scanVector
                 angle = pc.scanAngle
@@ -399,6 +410,9 @@ class ScenePlot():
                 # Save plot as eps file
                 path = os.path.join(self.directory, 'fig' + str(type).zfill(2) + '.eps')
                 plt.savefig(path, format='eps', dpi=1000)
+                message = "Plot saved to " + str(path)
+                self.sc.log(message)
+                print(message)
                 plt.show()
             else:
                 plt.show()
