@@ -5,3 +5,5 @@
 /data_scene
 /fig
 *.log
+/models
+*.npz
