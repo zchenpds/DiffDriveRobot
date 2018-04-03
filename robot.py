@@ -452,12 +452,18 @@ class Robot():
         res, pos = vrep.simxGetObjectPosition(self.scene.clientID, 
                                               self.robotHandle, -1, 
                                               vrep.simx_opmode_blocking)
+        if res != 0:
+            raise VrepError("Cannot get object position with error code " + str(res))
         res, ori = vrep.simxGetObjectOrientation(self.scene.clientID, 
                                               self.robotHandle, -1, 
                                               vrep.simx_opmode_blocking)
+        if res != 0:
+            raise VrepError("Cannot get object orientation with error code " + str(res))
         res, vel, omega = vrep.simxGetObjectVelocity(self.scene.clientID,
                                                      self.robotHandle,
                                                      vrep.simx_opmode_blocking)
+        if res != 0:
+            raise VrepError("Cannot get object velocity with error code " + str(res))
         #print("Linear speed: %.3f" % (vel[0]**2 + vel[1]**2)**0.5, 
         #      "m/s. Angular speed: %.3f" % omega[2])
         #print("pos: %.2f" % pos[0], ", %.2f" % pos[1])
@@ -498,6 +504,7 @@ class Robot():
                     vrep.simx_opmode_blocking)
             #print(len(velodyne_points[2]))
             #print(velodyne_points[2])
+            res = velodyne_points[0]
             
             # Parse data
             if 'VPL16_counter' not in self.__dict__:
@@ -512,6 +519,11 @@ class Robot():
             self.pointCloud.addRawData(velodyne_points[2]) # will rotate here
             
             if self.VPL16_counter == 3:
+                
+                #print("Length of point cloud is " + str(len(self.pointCloud.data)))
+                if res != 0:
+                    raise VrepError("Cannot get point cloud with error code " + str(res))
+                
                 #start = time.clock()
                 self.pointCloud.crop()
                 #end = time.clock()
@@ -531,5 +543,9 @@ class Robot():
         
         
         
-        
+class VrepError(Exception):
+    # Exception raised for errors related vrep.
+
+    def __init__(self, message):
+        self.message = message
         

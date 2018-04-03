@@ -72,10 +72,15 @@ class Data():
                 state = self.robot.leader.getV1V2()
             elif mode == -10: # Peer's state
                 peer = self.robot
-                phii = math.atan2(peer.xid0.y, peer.xid0.x)
-                rhoi = (peer.xid0.x ** 2 + peer.xid0.y ** 2) ** 0.5
+                phii = math.atan2(peer.xid.y - peer.xi.y, peer.xid.x - peer.xi.x)
+                rhoi = ((peer.xid.x - peer.xi.x)**2 + (peer.xid.y - peer.xi.y)**2) ** 0.5
                 thetai = peer.xi.theta
-                state = np.array([[peer.xid.vRef, rhoi, phii - thetai]])
+                psi = phii - thetai
+                if psi > math.pi:
+                    psi -= 2 * math.pi
+                elif psi < -math.pi:
+                    psi += 2 * math.pi
+                state = np.array([[peer.xid.vRef, rhoi, psi]])
             ret = (obs0, state)
         
         return ret
@@ -119,10 +124,16 @@ class Data():
                         ]]
         elif self.robot.scene.dynamics == 14:
             peer = self.robot
-            phii = math.atan2(peer.xid0.y, peer.xid0.x)
-            rhoi = (peer.xid0.x ** 2 + peer.xid0.y ** 2) ** 0.5
+            phii = math.atan2(peer.xid.y - peer.xi.y, peer.xid.x - peer.xi.x)
+            rhoi = ((peer.xid.x - peer.xi.x)**2 + (peer.xid.y - peer.xi.y)**2) ** 0.5
             thetai = peer.xi.theta
-            obs2Data = [[peer.xid.vRef, rhoi, phii - thetai, # 1, 2, 3: mode = -10
+            psi = phii - thetai
+            if psi > math.pi:
+                psi -= 2 * math.pi
+            elif psi < -math.pi:
+                psi += 2 * math.pi
+                
+            obs2Data = [[peer.xid.vRef, rhoi, psi, # 1, 2, 3: mode = -10
                          peer.xid.x - peer.xi.x, peer.xid.y - peer.xi.y,  # 4, 5
                          peer.xid.x, peer.xid.y]] # 6, 7
                          

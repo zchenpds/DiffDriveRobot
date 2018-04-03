@@ -21,7 +21,7 @@ import os
 from state import State
 
 class Scene():
-    def __init__(self, fileName = "Untitled", recordData = False):
+    def __init__(self, fileName = "Untitled", recordData = False, runNum = 0):
         self.t = 0
         self.dt = 0.01
         
@@ -74,7 +74,8 @@ class Scene():
         self.errorType = 0
         self.logPriorityMax = 1 # Messages with lower priorities are not logged
         self.logFileName = os.path.splitext(fileName)[0] + ".log"
-        self.log('A new scene is created.')
+        self.runNum = runNum
+        self.log('A new scene is created for run #' + str(runNum))
         
     def addRobot(self, arg, arg2 = np.float32([.5, .5]), 
                  role = 1, learnedController = None):
@@ -468,10 +469,11 @@ class Scene():
     def log(self, message, priority=1):
         if priority <= self.logPriorityMax:
             with open(self.logFileName, "a+" ) as f:
-                prefix = '[' + str(datetime.datetime.now()) + "] [sim time: {0:.3f} s] "
-                prefix = prefix.format(self.t)
+                prefix = ("[" + str(datetime.datetime.now()) + "]"
+                            + " [run #{0:03d}]"
+                            + " [sim time: {1:.3f} s] ")
+                prefix = prefix.format(self.runNum, self.t)
                 f.write(prefix + message + '\n')
-    
     
     
     
