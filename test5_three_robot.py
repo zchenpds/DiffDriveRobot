@@ -19,30 +19,42 @@ import random
 #fcl = DeepFCL(50, 50, 2, 1)
 
 def initRef(sc):
-    #radiusLeaderList = [2.0, 3.0, 4.0]
-    #speedLeaderList = [0.2, 0.3, 0.4]
-    radiusLeaderList = [2.0]
-    speedLeaderList = [0.4]
-    radiusLeader = random.choice(radiusLeaderList)
-    sc.referenceSpeed = random.choice(speedLeaderList)
-    sc.referenceOmega = sc.referenceSpeed / radiusLeader
-    message = "Ref speed: {0:.3f} m/s; Ref omega: {1:.3f} rad/s; Ref radius: {2:.3f} m"
-    message = message.format(sc.referenceSpeed, sc.referenceOmega, radiusLeader)
-    sc.log(message)
-    print(message)
-
-
+    if sc.dynamics == sc.DYNAMICS_MODEL_BASED_LINEAR:
+        #radiusLeaderList = [2.0, 3.0, 4.0]
+        #speedLeaderList = [0.2, 0.3, 0.4]
+        radiusLeaderList = [2.0]
+        speedLeaderList = [0.4]
+        radiusLeader = random.choice(radiusLeaderList)
+        sc.referenceSpeed = random.choice(speedLeaderList)
+        sc.referenceOmega = sc.referenceSpeed / radiusLeader
+        message = "Ref speed: {0:.3f} m/s; Ref omega: {1:.3f} rad/s; Ref radius: {2:.3f} m"
+        message = message.format(sc.referenceSpeed, sc.referenceOmega, radiusLeader)
+        sc.log(message)
+        print(message)
+    elif sc.dynamics == sc.DYNAMICS_MODEL_BASED_LINEAR_GOAL:
+        g = 4.0 
+        goalList = [[g, g], [-g, g], [g, -g], [-g, -g]]
+        vRefList = [0.3, 0.4, 0.5]
+        sc.xid.x, sc.xid.y = random.choice(goalList)
+        sc.xid.vRef = random.choice(vRefList)
+        message = "Goal: ({0:.3f}, {1:.3f}); Ref speed: {2:.3f} m/s"
+        message = message.format(sc.xid.x, sc.xid.y, sc.xid.vRef)
+        sc.xid.theta = 0
+        sc.xid.sDot = 0
+        sc.xid.thetaDot = 0
+        
 def generateData():
     sc = Scene(fileName = __file__, recordData = True)
     sp = ScenePlot(sc)
     sp.saveEnabled = True # save plots?
     #sc.occupancyMapType = sc.OCCUPANCY_MAP_THREE_CHANNEL
     sc.occupancyMapType = sc.OCCUPANCY_MAP_BINARY
-    sc.dynamics = sc.DYNAMICS_MODEL_BASED_LINEAR # robot dynamics
-    sc.errorType = 1
+    sc.dynamics = sc.DYNAMICS_MODEL_BASED_LINEAR_GOAL # robot dynamics
+    sc.errorType = 0
     try:
-        sc.addRobot(np.float32([[-2, 0, 0], [0.0, 0.0, 0.0]]), role = sc.ROLE_LEADER)
-        sc.addRobot(np.float32([[1, 3, 0], [-1.0, 0.0, 0.0]]), role = sc.ROLE_FOLLOWER)
+        sc.addRobot(np.float32([[-2, 0, 0], [0.0, 0.0, 0.0]]), role = sc.ROLE_PEER)
+        sc.addRobot(np.float32([[1, 3, 0], [-1.0, 0.0, 0.0]]), role = sc.ROLE_PEER)
+        sc.addRobot(np.float32([[2, 3, 0], [-0.5, 1.732/2, 0.0]]), role = sc.ROLE_PEER)
 #==============================================================================
 #         sc.addRobot(np.float32([[1, 3, 0], [0, -1, 0]]), 
 #                     dynamics = sc.DYNAMICS_LEARNED, 
@@ -50,7 +62,7 @@ def generateData():
 #==============================================================================
         
         # No leader
-        sc.setADjMatrix(np.uint8([[0, 0], [1, 0]]))
+        sc.setADjMatrix(np.uint8([[0, 1, 1], [1, 0, 1], [1, 1, 0]]))
         # Set robot 0 as the leader.
         
         # vrep related
@@ -63,20 +75,24 @@ def generateData():
         if sc.SENSOR_TYPE == "None":
             sc.setVrepHandles(0, '')
             sc.setVrepHandles(1, '#0')
+            sc.setVrepHandles(2, '#1')
         elif sc.SENSOR_TYPE == "2d":
             sc.objectNames.append('LaserScanner_2D_front')
             sc.objectNames.append('LaserScanner_2D_rear')
             sc.setVrepHandles(0, '')
             sc.setVrepHandles(1, '#0')
+            sc.setVrepHandles(2, '#1')
         elif sc.SENSOR_TYPE == "VPL16":
             sc.objectNames.append('velodyneVPL_16') # _ptCloud
             sc.setVrepHandles(0, '')
             sc.setVrepHandles(1, '#0')
+            sc.setVrepHandles(2, '#1')
         elif sc.SENSOR_TYPE == "kinect":
             sc.objectNames.append('kinect_depth')
             sc.objectNames.append('kinect_rgb')
             sc.setVrepHandles(0, '')
             sc.setVrepHandles(1, '#0')
+            sc.setVrepHandles(2, '#1')
         
         #sc.renderScene(waitTime = 3000)
         tf = 30 # must be greater than 1
@@ -88,8 +104,8 @@ def generateData():
         #sc.robots[1].setPosition([-2.2, -1.0, 0.3])
         sp.plot(4, tf)
         while sc.simulate():
-            sc.renderScene(waitTime = int(sc.dt * 1000))
-            #sc.showOccupancyMap(waitTime = int(sc.dt * 1000))
+            #sc.renderScene(waitTime = int(sc.dt * 1000))
+            sc.showOccupancyMap(waitTime = int(sc.dt * 1000))
             
             #print("---------------------")
             #print("t = %.3f" % sc.t, "s")
@@ -99,15 +115,15 @@ def generateData():
                 if maxAbsError < 0.01 and errorCheckerEnabled:
                     #tf = sc.t - 0.01
                     # set for how many seconds after convergence the simulator shall run
-                    tExtra = 10
+                    tExtra = 30
                     tf = sc.t + tExtra
                     errorCheckerEnabled = False
                     print('Ending in ', str(tExtra), ' seconds...')
             
             #sp.plot(0, tf)
             sp.plot(2, tf)
-            #sp.plot(1, tf) 
-            sp.plot(3, tf)
+            sp.plot(21, tf) 
+            sp.plot(22, tf)
             sp.plot(4, tf)
             #sp.plot(5, tf)
             sp.plot(6, tf)
@@ -157,7 +173,7 @@ for i in range(0, numRun):
     # First episode
     sc = generateData()
     if sc is not None:
-        # if the list is empty
+        # if the list is not empty
         saver.save(sc) # save data
         if not dataList:
             for robot in sc.robots:
@@ -167,10 +183,12 @@ for i in range(0, numRun):
                 dataList[j].append(sc.robots[j].data)
         
 
-for j in range(len(sc.robots)):
-    dataList[j].store()
+for j in range(1, len(sc.robots)):
+    dataList[0].append(sc.robots[j].data)
+dataList[0].store()
 
-
+#for j in range(len(sc.robots)):
+#    dataList[j].store()
 
 
 

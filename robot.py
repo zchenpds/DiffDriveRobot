@@ -107,13 +107,13 @@ class Robot():
             sDot = self.scene.xid.sDot
             thetaDot = self.scene.xid.thetaDot
             
-            theta0 = math.atan2(self.xid0.y, self.xid0.x)
-            rho0 = (self.xid0.x ** 2 + self.xid0.y ** 2) ** 0.5
-            #print('theta0 = ', theta0)
-            self.xid.x = x + rho0 * math.cos(theta + theta0)
-            self.xid.y = y + rho0 * math.sin(theta + theta0)
-            self.xid.vx = sDot * math.cos(theta) - rho0 * thetaDot * math.sin(theta + theta0)
-            self.xid.vy = sDot * math.sin(theta) + rho0 * thetaDot * math.cos(theta + theta0)
+            phii = math.atan2(self.xid0.y, self.xid0.x)
+            rhoi = (self.xid0.x ** 2 + self.xid0.y ** 2) ** 0.5
+            #print('phii = ', phii)
+            self.xid.x = x + rhoi * math.cos(theta + phii)
+            self.xid.y = y + rhoi * math.sin(theta + phii)
+            self.xid.vx = sDot * math.cos(theta) - rhoi * thetaDot * math.sin(theta + phii)
+            self.xid.vy = sDot * math.sin(theta) + rhoi * thetaDot * math.cos(theta + phii)
             #print('vx: ', self.xid.vx, 'vy:', self.xid.vy)
             #print('v', self.index, ' = ', (self.xid.vx**2 + self.xid.vy**2)**0.5)
             
@@ -124,6 +124,39 @@ class Robot():
             c = self.l/2
             self.xid.vxp = self.xid.vx - c * math.sin(self.xid.theta) * thetaDot
             self.xid.vyp = self.xid.vy + c * math.cos(self.xid.theta) * thetaDot
+            
+        elif self.dynamics == 14:
+            # Linear desired trajectory
+            t = self.scene.t
+            #dt = self.scene.dt
+            x = self.scene.xid.x
+            y = self.scene.xid.y
+            #print('x = ', x, 'y = ', y)
+            theta = self.scene.xid.theta
+            #print('theta = ', theta)
+            sDot = self.scene.xid.sDot
+            thetaDot = self.scene.xid.thetaDot
+            
+            phii = math.atan2(self.xid0.y, self.xid0.x)
+            rhoi = (self.xid0.x ** 2 + self.xid0.y ** 2) ** 0.5
+            #print('phii = ', phii)
+            self.xid.x = x + rhoi * math.cos(phii)
+            self.xid.y = y + rhoi * math.sin(phii)
+            self.xid.vx = sDot * math.cos(theta)
+            self.xid.vy = sDot * math.sin(theta)
+            #print('vx: ', self.xid.vx, 'vy:', self.xid.vy)
+            #print('v', self.index, ' = ', (self.xid.vx**2 + self.xid.vy**2)**0.5)
+            if ((self.xid.x - self.xi.x)**2 + (self.xid.y - self.xi.y)**2)**0.5 > 1e-1:
+                self.xid.theta = math.atan2((self.xid.y - self.xi.y), 
+                                            (self.xid.x - self.xi.x))
+            #if (self.xid.vx**2 + self.xid.vy**2)**0.5 > 1e-3:
+            #    self.xid.theta = math.atan2(self.xid.vy, self.xid.vx)
+            #self.xid.omega = omega
+            
+            c = self.l/2
+            self.xid.vxp = self.xid.vx - c * math.sin(self.xid.theta) * thetaDot
+            self.xid.vyp = self.xid.vy + c * math.cos(self.xid.theta) * thetaDot
+            self.xid.vRef = self.scene.xid.vRef
             
     def precompute(self):
         self.updateNeighbors()
@@ -178,18 +211,23 @@ class Robot():
                 v2 = sum(self.ctrl2_sm[len(self.ctrl2_sm)-10:len(self.ctrl2_sm)]) / 10
                 
             #print(v1,v2,'dnn')
-        elif self.dynamics >= 11 and self.dynamics <= 19:
+        elif self.dynamics >= 11 and self.dynamics <= 15:
             # For e-puk dynamics
             # Feedback linearization
             # v1: left wheel speed
             # v2: right wheel speed
             
-            if self.role == 0: # I am a leader
+            dxypMax = float('inf')
+            if self.role == self.scene.ROLE_LEADER: # I am a leader
                 K1 = 1
                 K2 = 1
-            else: # I am a follower
+            elif self.role == self.scene.ROLE_FOLLOWER:
                 K1 = 0 # Reference position information is forbidden
-                K2 = 1 # Reference velocity information is forbidden
+                K2 = 1
+            elif self.role == self.scene.ROLE_PEER:
+                K1 = 1
+                K2 = 0
+                dxypMax = self.scene.xid.vRef
             #K3 = 1
             K4 = 1.0
             
@@ -202,8 +240,15 @@ class Robot():
                 vxp += -K4 * ((self.xi.xp - robot.xi.xp) - (self.xid.xp - robot.xid.xp))
                 vyp += -K4 * ((self.xi.yp - robot.xi.yp) - (self.xid.yp - robot.xid.yp))
             
-            vxp += -K1 * (self.xi.xp - self.xid.xp)
-            vyp += -K1 * (self.xi.yp - self.xid.yp)
+            dxp = self.xi.xp - self.xid.xp
+            dyp = self.xi.yp - self.xid.yp
+            # Limit magnitude
+            dxyp = (dxp**2 + dyp**2)**0.5
+            if dxyp > dxypMax:
+                dxp = dxp / dxyp * dxypMax
+                dyp = dyp / dxyp * dxypMax
+            vxp += -K1 * dxp
+            vyp += -K1 * dyp
             
             vxp += K2 * self.xid.vxp
             vyp += K2 * self.xid.vyp
@@ -222,7 +267,7 @@ class Robot():
             #v2 = 0.3
  
             #print(v1,v2,'model')
-        
+            
         elif self.dynamics == 20:
             # step signal
             if self.scene.t < 1:

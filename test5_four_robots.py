@@ -19,10 +19,8 @@ import random
 #fcl = DeepFCL(50, 50, 2, 1)
 
 def initRef(sc):
-    #radiusLeaderList = [2.0, 3.0, 4.0]
-    #speedLeaderList = [0.2, 0.3, 0.4]
-    radiusLeaderList = [2.0]
-    speedLeaderList = [0.4]
+    radiusLeaderList = [2.0, 3.0, 4.0]
+    speedLeaderList = [0.2, 0.3, 0.4]
     radiusLeader = random.choice(radiusLeaderList)
     sc.referenceSpeed = random.choice(speedLeaderList)
     sc.referenceOmega = sc.referenceSpeed / radiusLeader
@@ -42,7 +40,9 @@ def generateData():
     sc.errorType = 1
     try:
         sc.addRobot(np.float32([[-2, 0, 0], [0.0, 0.0, 0.0]]), role = sc.ROLE_LEADER)
-        sc.addRobot(np.float32([[1, 3, 0], [-1.0, 0.0, 0.0]]), role = sc.ROLE_FOLLOWER)
+        sc.addRobot(np.float32([[1, 3, 0], [-1.0, 1.0, 0.0]]), role = sc.ROLE_FOLLOWER)
+        sc.addRobot(np.float32([[2, 4, 0], [-1.0, -1.0, 0.0]]), role = sc.ROLE_FOLLOWER)
+        sc.addRobot(np.float32([[-1, 3, 0], [-2.0, 0.0, 0.0]]), role = sc.ROLE_FOLLOWER)
 #==============================================================================
 #         sc.addRobot(np.float32([[1, 3, 0], [0, -1, 0]]), 
 #                     dynamics = sc.DYNAMICS_LEARNED, 
@@ -50,11 +50,14 @@ def generateData():
 #==============================================================================
         
         # No leader
-        sc.setADjMatrix(np.uint8([[0, 0], [1, 0]]))
+        sc.setADjMatrix(np.uint8([[0, 0, 0, 0], 
+                                  [1, 0, 1, 1], 
+                                  [1, 1, 0, 1], 
+                                  [1, 1, 1, 0]]))
         # Set robot 0 as the leader.
         
         # vrep related
-        sc.initVrep()
+        #sc.initVrep()
         # Choose sensor type
         sc.SENSOR_TYPE = "VPL16" # None, 2d, VPL16, kinect
         #sc.SENSOR_TYPE = "None" # None, 2d, VPL16, kinect
@@ -63,20 +66,12 @@ def generateData():
         if sc.SENSOR_TYPE == "None":
             sc.setVrepHandles(0, '')
             sc.setVrepHandles(1, '#0')
-        elif sc.SENSOR_TYPE == "2d":
-            sc.objectNames.append('LaserScanner_2D_front')
-            sc.objectNames.append('LaserScanner_2D_rear')
-            sc.setVrepHandles(0, '')
-            sc.setVrepHandles(1, '#0')
         elif sc.SENSOR_TYPE == "VPL16":
             sc.objectNames.append('velodyneVPL_16') # _ptCloud
             sc.setVrepHandles(0, '')
             sc.setVrepHandles(1, '#0')
-        elif sc.SENSOR_TYPE == "kinect":
-            sc.objectNames.append('kinect_depth')
-            sc.objectNames.append('kinect_rgb')
-            sc.setVrepHandles(0, '')
-            sc.setVrepHandles(1, '#0')
+            sc.setVrepHandles(2, '#1')
+            sc.setVrepHandles(3, '#2')
         
         #sc.renderScene(waitTime = 3000)
         tf = 30 # must be greater than 1
@@ -99,7 +94,7 @@ def generateData():
                 if maxAbsError < 0.01 and errorCheckerEnabled:
                     #tf = sc.t - 0.01
                     # set for how many seconds after convergence the simulator shall run
-                    tExtra = 10
+                    tExtra = 20
                     tf = sc.t + tExtra
                     errorCheckerEnabled = False
                     print('Ending in ', str(tExtra), ' seconds...')

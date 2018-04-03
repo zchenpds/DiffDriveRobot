@@ -38,8 +38,8 @@ class Scene():
         # For visualization
         self.wPix = 600
         self.hPix = 600
-        self.xMax = 5
-        self.yMax = 5
+        self.xMax = 15
+        self.yMax = 15
         self.image = np.zeros((self.hPix, self.wPix, 3), np.uint8)
         
         self.robots = []
@@ -63,13 +63,15 @@ class Scene():
         self.DYNAMICS_MODEL_BASED_CICULAR = 11
         self.DYNAMICS_MODEL_BASED_STABILIZER = 12
         self.DYNAMICS_MODEL_BASED_LINEAR = 13
+        self.DYNAMICS_MODEL_BASED_LINEAR_GOAL = 14
         self.DYNAMICS_LEARNED = 30
         
         # follower does not have knowledge of absolute position
         self.ROLE_LEADER = 0
         self.ROLE_FOLLOWER = 1
+        self.ROLE_PEER = 2
         
-        self.errorType = 1
+        self.errorType = 0
         self.logPriorityMax = 1 # Messages with lower priorities are not logged
         self.logFileName = os.path.splitext(fileName)[0] + ".log"
         self.log('A new scene is created.')
@@ -107,6 +109,8 @@ class Scene():
             message += "Leader"
         elif robot.role == 1:
             message += "Follower"
+        elif robot.role == 2:
+            message += "Peer"
         else:
             message += "Type-unkonwn"
         message += " robot #" + str(robot.index) + " using "
@@ -137,8 +141,8 @@ class Scene():
                 
         else:
             self.vrepConnected = False
-            print ('Failed connecting to remote API server')
-            raise
+            print ("Failed connecting to remote API server")
+            raise Exception("Failed connecting to remote API server")
         self.dt = 0.05
     
     def setVrepHandles(self, robotIndex, handleNameSuffix = ""):
@@ -254,7 +258,7 @@ class Scene():
                 while True:
                     minDij = 100
                     alpha1 = math.pi * (1 + random.random())
-                    rho1 = boundaryFactor * self.xMax * random.random()
+                    rho1 = boundaryFactor * 5 * random.random()
                     x1 = rho1 * math.cos(alpha1)
                     y1 = rho1 * math.sin(alpha1)
                     theta1 = 2 * math.pi * random.random()
@@ -270,6 +274,26 @@ class Scene():
                     if minDij >= MIN_DISTANCE:
                         self.robots[i].setPosition([x1, y1, theta1])
                         break # i++
+        elif self.robots[0].dynamics == 14:
+            for i in range(0, len(self.robots)):
+                while True:
+                    minDij = float("inf")
+                    alpha1 = math.pi * (-2/3*i - 1/3* random.random())
+                    rho1 = 2 * random.random()
+                    x1 = rho1 * math.cos(alpha1)
+                    y1 = rho1 * math.sin(alpha1)
+                    theta1 = 2 * math.pi * random.random()
+                    for j in range(0, i):
+                        dij = ((x1 - self.robots[j].xi.x)**2 + 
+                               (y1 - self.robots[j].xi.y)**2)**0.5
+                        # print('j = ', j, '( %.3f' % self.robots[j].xi.x, ', %.3f'%self.robots[j].xi.y, '), ', 'dij = ', dij)
+                        if dij < minDij:
+                            minDij = dij # find the smallest dij for all j
+                    print('Min distance: ', minDij, 'from robot #', i, 'to other robots.')
+                    # if the smallest dij is greater than allowed,
+                    if minDij >= MIN_DISTANCE:
+                        self.robots[i].setPosition([x1, y1, theta1])
+                        break # i++
         #input('One moment.')
         # End of resetPosition()
 
@@ -279,7 +303,7 @@ class Scene():
         dt = self.dt
         sDot = 0
         thetaDot = 0        
-        if self.dynamics == 13:
+        if self.robots[0].dynamics == 13:
             t1 = 1
             speed = self.referenceSpeed
             omega = self.referenceOmega
@@ -289,11 +313,15 @@ class Scene():
             else:
                 sDot = speed
                 thetaDot = omega
-        self.xid.x += sDot * dt * math.cos(self.xid.theta)
-        self.xid.y += sDot * dt * math.sin(self.xid.theta)
-        self.xid.theta += thetaDot * dt
-        self.xid.sDot = sDot
-        self.xid.thetaDot = thetaDot
+            self.xid.x += sDot * dt * math.cos(self.xid.theta)
+            self.xid.y += sDot * dt * math.sin(self.xid.theta)
+            self.xid.theta += thetaDot * dt
+            self.xid.sDot = sDot
+            self.xid.thetaDot = thetaDot
+        elif self.robots[0].dynamics == 14:
+            # do nothing because xid is time-invariant
+            pass
+        
         
     def simulate(self):
         # vrep related
