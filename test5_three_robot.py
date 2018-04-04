@@ -115,7 +115,7 @@ def generateData(i):
                     #tf = sc.t - 0.01
                     # set for how many seconds after convergence the simulator shall run
                     tExtra = 30
-                    tf = sc.t + tExtra
+                    #tf = sc.t + tExtra
                     errorCheckerEnabled = False
                     print('Ending in ', str(tExtra), ' seconds...')
             

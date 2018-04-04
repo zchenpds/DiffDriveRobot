@@ -27,7 +27,7 @@ class DeepFCL:
         # input variables
         self.obs_var = tf.placeholder(shape=[None,obs_dim1*obs_dim2*img_chnl], dtype=tf.float32, name="obs_var")
         #self.obs_var = tf.placeholder(tf.float32, shape=(None,obs_dim,obs_dim))
-        #self.goal_trj = tf.placeholder(shape=[None,2], dtype=tf.float32, name="goal_trj")
+        self.goal_trj = tf.placeholder(shape=[None,3], dtype=tf.float32, name="goal_trj")
         #self.is_training = tf.placeholder(shape=[],  dtype=tf.bool, name="train_cond")
         
         # ------- Define Observation-State Mapping Using Convolutional Network -----------------------
@@ -171,10 +171,10 @@ class DeepFCL:
         self.saver.restore(self.sess, os.path.join(self.save_path, 'model_epi' + str(150-1)))
         
         
-    def test(self, observations = None, pre_actions = None):
-        # pre_actions is not used
+
+    def test(self, observations = None, vref_goal = None):
         if observations is None:
-            return 0
+            return -11
         observations = (observations - self.mean_obs) / self.std_obs
 #        saver = tf.train.Saver()
 #        current_dir = os.getcwd()
@@ -182,7 +182,8 @@ class DeepFCL:
 #        with tf.Session() as sess:
             # load the model and output action
 #            self.saver.restore(sess, os.path.join(self.save_path, 'model_epi' + str(150-1)))
-        act_output = self.sess.run(self.out, feed_dict = {self.obs_var: observations})
+        act_output = self.sess.run(self.out, feed_dict = {self.obs_var: observations,
+                                                          self.goal_trj: vref_goal})
            
         return act_output
         
