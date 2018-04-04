@@ -7,8 +7,8 @@ To run this file, please open vrep file scene/scene_double.ttt first
 """
 
 from scene import Scene
+from robot import VrepError
 from sceneplot import ScenePlot
-
 # from robot import Robot
 import numpy as np
 import math
@@ -32,19 +32,18 @@ def initRef(sc):
         sc.log(message)
         print(message)
     elif sc.dynamics == sc.DYNAMICS_MODEL_BASED_LINEAR_GOAL:
-        g = 4.0 
+        g = 5.0 
         goalList = [[g, g], [-g, g], [g, -g], [-g, -g]]
-        vRefList = [0.4, 0.5, 0.6]
         sc.xid.x, sc.xid.y = random.choice(goalList)
-        sc.xid.vRef = random.choice(vRefList)
+        sc.xid.vRef = 0.7
         message = "Goal: ({0:.3f}, {1:.3f}); Ref speed: {2:.3f} m/s"
         message = message.format(sc.xid.x, sc.xid.y, sc.xid.vRef)
         sc.xid.theta = 0
         sc.xid.sDot = 0
         sc.xid.thetaDot = 0
         
-def generateData():
-    sc = Scene(fileName = __file__, recordData = True)
+def generateData(i):
+    sc = Scene(fileName = __file__, recordData = True, runNum = i)
     sp = ScenePlot(sc)
     sp.saveEnabled = True # save plots?
     #sc.occupancyMapType = sc.OCCUPANCY_MAP_THREE_CHANNEL
@@ -95,8 +94,8 @@ def generateData():
             sc.setVrepHandles(2, '#1')
         
         #sc.renderScene(waitTime = 3000)
-        tf = 30 # must be greater than 1
-        errorCheckerEnabled = True
+        tf = 20 # must be greater than 1
+        errorCheckerEnabled = False
         initRef(sc)
         sc.resetPosition() # Random initial position
         # Fixed initial position
@@ -116,7 +115,7 @@ def generateData():
                     #tf = sc.t - 0.01
                     # set for how many seconds after convergence the simulator shall run
                     tExtra = 30
-                    #tf = sc.t + tExtra
+                    tf = sc.t + tExtra
                     errorCheckerEnabled = False
                     print('Ending in ', str(tExtra), ' seconds...')
             
@@ -134,10 +133,8 @@ def generateData():
                 break
             
             
-        sc.deallocate()
     except KeyboardInterrupt:
         x = input('Quit?(y/n)')
-        sc.deallocate()
         if x == 'y' or x == 'Y':
             tf = sc.t - 0.01
             #sp.plot(0, tf)
@@ -148,12 +145,15 @@ def generateData():
             #sp.plot(5, tf)
             sp.plot(6, tf)
             raise Exception('Aborted.')
-        
+    
+    except VrepError as err:
+        sc.log(err.message)
+        print(err.message)
+        return None
     except:
-        sc.deallocate()
         raise
-    
-    
+    finally:
+        sc.deallocate()
     
     if True: #maxAbsError < 0.01:
         return sc
@@ -164,16 +164,17 @@ def generateData():
 
 # main
 import saver
-numRun = 100
+numRun = 200
 dataList = []
 
 
 for i in range(0, numRun):
     print('Run #: ', i, '...')
     # First episode
-    sc = generateData()
-    if sc is not None:
+    sc0 = generateData(i)
+    if sc0 is not None:
         # if the list is not empty
+        sc = sc0
         saver.save(sc) # save data
         if not dataList:
             for robot in sc.robots:
@@ -184,7 +185,7 @@ for i in range(0, numRun):
         
 
 for j in range(1, len(sc.robots)):
-    dataList[0].append(sc.robots[j].data)
+    dataList[0].append(dataList[j])
 dataList[0].store()
 
 #for j in range(len(sc.robots)):
