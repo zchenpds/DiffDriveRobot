@@ -408,7 +408,7 @@ class ScenePlot():
                                       color = c, label = 'Left Wheel Velocity')
                     curve2, = plt.plot(self.sc.ts, self.sc.ydict2[type][i], '--', 
                                       color = c, label = 'Right Wheel Velocity')
-                plt.legend(handles = [curve1, curve2])
+                #plt.legend(handles = [curve1, curve2])
                 plt.xlabel('t (s)')
                 plt.ylabel('Robot Actions (m/s)')
                 

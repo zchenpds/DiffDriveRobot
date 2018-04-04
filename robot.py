@@ -216,6 +216,7 @@ class Robot():
             # Feedback linearization
             # v1: left wheel speed
             # v2: right wheel speed
+            K4 = 1.0
             
             dxypMax = float('inf')
             if self.role == self.scene.ROLE_LEADER: # I am a leader
@@ -227,9 +228,10 @@ class Robot():
             elif self.role == self.scene.ROLE_PEER:
                 K1 = 1
                 K2 = 0
+                K4 = 1.0
                 dxypMax = self.scene.xid.vRef
             #K3 = 1
-            K4 = 1.0
+            
             
             # velocity in transformed space
             vxp = 0

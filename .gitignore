@@ -4,6 +4,10 @@
 /data
 /data_scene
 /fig
+remoteApi.so
+vrep.py
+vrepConst.py
+*~
 *.log
 /models
 *.npz

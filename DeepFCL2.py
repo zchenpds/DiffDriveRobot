@@ -22,12 +22,12 @@ class DeepFCL:
         # observation and state space dimension        
         self.obs_dim = obs_dim1*obs_dim2*img_chnl # height * width * channel
         self.act_dim = act_dim 
-        self.batchsize = 32 #256
+        self.batchsize = 256 #32
        
         # input variables
         self.obs_var = tf.placeholder(shape=[None,obs_dim1*obs_dim2*img_chnl], dtype=tf.float32, name="obs_var")
         #self.obs_var = tf.placeholder(tf.float32, shape=(None,obs_dim,obs_dim))
-        self.goal_trj = tf.placeholder(shape=[None,3], dtype=tf.float32, name="goal_trj")
+        self.pre_ctrl = tf.placeholder(shape=[None,2], dtype=tf.float32, name="pre_ctrl")
         #self.is_training = tf.placeholder(shape=[],  dtype=tf.bool, name="train_cond")
         
         # ------- Define Observation-State Mapping Using Convolutional Network -----------------------
@@ -70,7 +70,8 @@ class DeepFCL:
         #self.conv3 = tf.layers.max_pooling2d(self.conv3,2,1)
         
         # output layer
-        self.convout = tf.contrib.layers.flatten(self.conv3)                                                    
+        #self.convout = tf.contrib.layers.flatten(self.conv3)
+        self.convout = tf.concat([tf.contrib.layers.flatten(self.conv3), self.pre_ctrl], 1)                                                      
                                                            
         # fully-connected (acti: ReLU)
         self.W1 = tf.Variable(tf.random_normal([self.convout.get_shape().as_list()[1], fc1_num]))
@@ -94,7 +95,7 @@ class DeepFCL:
         self.optimizer = tf.train.AdamOptimizer(learning_rate = 0.001)
         self.train_op = self.optimizer.minimize(self.loss)
         
-        self.saver = tf.train.Saver()            
+        self.saver = tf.train.Saver()
         
         current_dir = os.getcwd()
         self.save_path = os.path.join(current_dir + '/models/')
@@ -102,7 +103,7 @@ class DeepFCL:
         self.sess = tf.Session()
         
         
-    def learn(self, observations, actions, epi_starts):
+    def learn(self, observations, actions, pre_actions, epi_starts):
         
         # Prepre Training Data -------------------------------------------
         # normalize observation input
@@ -155,7 +156,8 @@ class DeepFCL:
             # save the updated model
             print('saving learned model')
             self.saver.save(sess, os.path.join(self.save_path, 'model_epi' + str(epoch)))
-            predicted_action = sess.run(self.out, feed_dict={self.obs_var: observations})
+            predicted_action = sess.run(self.out, feed_dict={self.obs_var: observations,
+                                                             self.pre_ctrl: pre_actions })
         plt.close("Learned Policy")
         
         return predicted_action, loss_hist
@@ -165,16 +167,15 @@ class DeepFCL:
 #        norm_para = np.load('norm_para2.npz')
 #        self.mean_obs = norm_para['arr_0']
 #        self.std_obs = norm_para['arr_1']
-        norm_para = np.load('train_rslt4.npz')
+        norm_para = np.load('train_rslt.npz')
         self.mean_obs = norm_para['mean_obs']
         self.std_obs = norm_para['std_obs']        
         self.saver.restore(self.sess, os.path.join(self.save_path, 'model_epi' + str(150-1)))
         
         
-
-    def test(self, observations = None, vref_goal = None):
+    def test(self, observations = None, pre_actions = None):
         if observations is None:
-            return -11
+            return 1
         observations = (observations - self.mean_obs) / self.std_obs
 #        saver = tf.train.Saver()
 #        current_dir = os.getcwd()
@@ -183,7 +184,7 @@ class DeepFCL:
             # load the model and output action
 #            self.saver.restore(sess, os.path.join(self.save_path, 'model_epi' + str(150-1)))
         act_output = self.sess.run(self.out, feed_dict = {self.obs_var: observations,
-                                                          self.goal_trj: vref_goal})
+                                                          self.pre_ctrl: pre_actions})
            
         return act_output
         
@@ -197,8 +198,8 @@ if __name__ == '__main__':
     #plot_observations(training_data['observations'], name="Observation Samples (Subset of Training Data) -- Simple Navigation Task")
 
     print('Learning a policy ... ')
-    fcl = DeepFCL(50, 50, 2, 1)
-    [training_ctrls, loss_hist] = fcl.learn(training_data['observations'],training_data['actions'],training_data['epi_starts'])
+    fcl = DeepFCL(50, 50, 2, 2)
+    [training_ctrls, loss_hist] = fcl.learn(training_data['observations'],training_data['actions'],training_data['actions_1'],training_data['epi_starts'])
 #    plot_representation(training_states, training_data['rewards'],
 #                            name='Observation-State-Mapping Applied to Training Data -- Simple Navigation Task',
 #                            add_colorbar=True)

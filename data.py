@@ -11,24 +11,15 @@ import math
 
 class Data():
     def __init__(self, robot):
-        self.mode = -10
+        self.mode = -11
         self.q = queue.Queue()
         
         self.robot = robot
         pc = self.robot.pointCloud
         self.d = dict() # Will become None after the scene is saved
         self.d['epi_starts'] = np.array([], dtype = np.bool)
-        if self.mode == 0:
+        if self.mode < 0:
             self.d['observations'] = np.zeros((0, pc.hPix * pc.wPix), dtype = np.int8)
-        elif self.mode == -1 or self.mode == -2:
-            self.d['observations'] = np.zeros((0, pc.hPix * pc.wPix), dtype = np.int8)
-            self.d['observations2'] = np.zeros((0, 1), dtype = np.float32)
-        elif self.mode == -3 or self.mode == -4:
-            self.d['observations'] = np.zeros((0, pc.hPix * pc.wPix), dtype = np.int8)
-            self.d['observations2'] = np.zeros((0, 2), dtype = np.float32)
-        elif self.mode == -10:
-            self.d['observations'] = np.zeros((0, pc.hPix * pc.wPix), dtype = np.int8)
-            self.d['observations2'] = np.zeros((0, 3), dtype = np.float32)
         elif self.mode > 0:
             self.d['observations'] = np.zeros((0, pc.hPix * pc.wPix * 2), dtype = np.int8)
             self.d['observations2'] = np.zeros((0, 2), dtype = np.float32)
@@ -36,7 +27,7 @@ class Data():
         if self.robot.scene.dynamics == 13:
             self.d['obs2'] = np.zeros((0, 17), dtype = np.float32)
         elif self.robot.scene.dynamics == 14:
-            self.d['obs2'] = np.zeros((0, 7), dtype = np.float32)
+            self.d['obs2'] = np.zeros((0, 4), dtype = np.float32)
         else:
             raise Exception("Undefined robot dynamics for data recording", self.robot.dynamics)
         self.d['actions'] = np.zeros((0, 2), dtype = np.float32)
@@ -81,6 +72,9 @@ class Data():
                 elif psi < -math.pi:
                     psi += 2 * math.pi
                 state = np.array([[peer.xid.vRef, rhoi, psi]])
+            elif mode == -11: # Peer's state
+                peer = self.robot
+                state = np.array([[peer.xi.x, peer.xi.y, peer.xid.x, peer.xid.y]])
             ret = (obs0, state)
         
         return ret
@@ -100,7 +94,7 @@ class Data():
             self.d['epi_starts'] = np.append(self.d['epi_starts'], False)
         
         self.d['observations'] = np.append(self.d['observations'], observation, axis = 0) # option 1
-        if self.mode != 0:
+        if self.mode >= 0:
             self.d['observations2'] = np.append(self.d['observations2'], observation2, axis = 0)
             
         self.d['observations1'] = np.append(self.d['observations1'], 
@@ -133,9 +127,9 @@ class Data():
             elif psi < -math.pi:
                 psi += 2 * math.pi
                 
-            obs2Data = [[peer.xid.vRef, rhoi, psi, # 1, 2, 3: mode = -10
-                         peer.xid.x - peer.xi.x, peer.xid.y - peer.xi.y,  # 4, 5
-                         peer.xid.x, peer.xid.y]] # 6, 7
+            obs2Data = [[#peer.xid.vRef, rhoi, psi, # 1, 2, 3: mode = -10
+                         peer.xi.x, peer.xi.y,  # 1, 2
+                         peer.xid.x, peer.xid.y]] # 3, 4 : mode = -11
                          
         self.d['obs2'] = np.append(self.d['obs2'], obs2Data, axis = 0)
         self.d['actions'] = np.append(self.d['actions'], 

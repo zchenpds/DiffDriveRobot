@@ -32,11 +32,10 @@ def initRef(sc):
         sc.log(message)
         print(message)
     elif sc.dynamics == sc.DYNAMICS_MODEL_BASED_LINEAR_GOAL:
-        g = 4.0 
+        g = 5.0 
         goalList = [[g, g], [-g, g], [g, -g], [-g, -g]]
-        vRefList = [0.3, 0.4, 0.5]
         sc.xid.x, sc.xid.y = random.choice(goalList)
-        sc.xid.vRef = random.choice(vRefList)
+        sc.xid.vRef = 0.7
         message = "Goal: ({0:.3f}, {1:.3f}); Ref speed: {2:.3f} m/s"
         message = message.format(sc.xid.x, sc.xid.y, sc.xid.vRef)
         sc.xid.theta = 0
@@ -95,8 +94,8 @@ def generateData(i):
             sc.setVrepHandles(2, '#1')
         
         #sc.renderScene(waitTime = 3000)
-        tf = 2 # must be greater than 1
-        errorCheckerEnabled = True
+        tf = 20 # must be greater than 1
+        errorCheckerEnabled = False
         initRef(sc)
         sc.resetPosition() # Random initial position
         # Fixed initial position
@@ -165,7 +164,7 @@ def generateData(i):
 
 # main
 import saver
-numRun = 4
+numRun = 200
 dataList = []
 
 
