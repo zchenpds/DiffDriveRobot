@@ -9,3 +9,6 @@ vrep.py
 vrepConst.py
 *~
 *.log
+/models
+*.npz
+*.bak

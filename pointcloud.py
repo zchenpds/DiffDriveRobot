@@ -25,12 +25,14 @@ class PointCloud():
         self.hPix = 50
         self.xMax = 5
         self.yMax = 5
+        self.clearOccupancyMap()
+        
+    def clearOccupancyMap(self):
         if self.robot.scene.occupancyMapType == self.robot.scene.OCCUPANCY_MAP_BINARY:
             self.occupancyMap = np.ones((self.hPix, self.wPix), np.uint8) * 255
         elif self.robot.scene.occupancyMapType == self.robot.scene.OCCUPANCY_MAP_THREE_CHANNEL:
             self.occupancyMap = np.zeros((self.hPix, self.wPix, 3), np.uint8)
-        
-        
+            
     def clearData(self):
         self.data = []
         self.dataCropped = []
@@ -46,12 +48,15 @@ class PointCloud():
         self.data = self.data + newData
     
     def updateOccupancyMap(self):
+        self.clearOccupancyMap()
         if self.robot.scene.occupancyMapType == self.robot.scene.OCCUPANCY_MAP_BINARY:
-             self.occupancyMap = np.ones((self.hPix, self.wPix), np.uint8) * 255
              #r = int(self.l/2*self.m2pix()) # radius, option 1
              pointCloudPix = self.m2pix(self.dataCropped) # option 1
              for i in range(len(pointCloudPix)):
                  self.occupancyMap[(pointCloudPix[i][0], pointCloudPix[i][1])] = 0 # option 1
+        elif self.robot.scene.occupancyMapType == self.robot.scene.OCCUPANCY_MAP_THREE_CHANNEL:
+            self.occupancyMap = np.zeros((self.hPix, self.wPix, 3), np.uint8)
+            
         
     def updateScanVector(self):
         self.scanVector = np.ones((1, self.lenScanVector), np.float32) * self.maxRange

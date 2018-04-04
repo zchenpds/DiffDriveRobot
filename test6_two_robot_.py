@@ -11,38 +11,21 @@ from sceneplot import ScenePlot
 
 # from robot import Robot
 import numpy as np
-import math
-import random
 # from data import Data
-#from DeepFCL import DeepFCL
+from DeepFCL2 import DeepFCL
 
-#fcl = DeepFCL(50, 50, 2, 1)
-
-def initRef(sc):
-    #radiusLeaderList = [2.0, 3.0, 4.0]
-    #speedLeaderList = [0.2, 0.3, 0.4]
-    radiusLeaderList = [2.0]
-    speedLeaderList = [0.4]
-    radiusLeader = random.choice(radiusLeaderList)
-    sc.referenceSpeed = random.choice(speedLeaderList)
-    sc.referenceOmega = sc.referenceSpeed / radiusLeader
-    message = "Ref speed: {0:.3f} m/s; Ref omega: {1:.3f} rad/s; Ref radius: {2:.3f} m"
-    message = message.format(sc.referenceSpeed, sc.referenceOmega, radiusLeader)
-    sc.log(message)
-    print(message)
-
-
+fcl = DeepFCL(50, 50, 2, 2)
+sc = None
 def generateData():
-    sc = Scene(fileName = __file__, recordData = True)
+    sc = Scene(recordData = True)
     sp = ScenePlot(sc)
-    sp.saveEnabled = True # save plots?
     #sc.occupancyMapType = sc.OCCUPANCY_MAP_THREE_CHANNEL
     sc.occupancyMapType = sc.OCCUPANCY_MAP_BINARY
     sc.dynamics = sc.DYNAMICS_MODEL_BASED_LINEAR # robot dynamics
-    sc.errorType = 1
     try:
         sc.addRobot(np.float32([[-2, 0, 0], [0.0, 0.0, 0.0]]), role = sc.ROLE_LEADER)
         sc.addRobot(np.float32([[1, 3, 0], [-1.0, 0.0, 0.0]]), role = sc.ROLE_FOLLOWER)
+#        sc.addRobot(np.float32([[1, 3, 0], [-1.0, 0.0, 0.0]]), role = sc.ROLE_FOLLOWER, learnedController = fcl.test)
 #==============================================================================
 #         sc.addRobot(np.float32([[1, 3, 0], [0, -1, 0]]), 
 #                     dynamics = sc.DYNAMICS_LEARNED, 
@@ -79,58 +62,53 @@ def generateData():
             sc.setVrepHandles(1, '#0')
         
         #sc.renderScene(waitTime = 3000)
-        tf = 30 # must be greater than 1
-        errorCheckerEnabled = True
-        initRef(sc)
-        sc.resetPosition() # Random initial position
-        # Fixed initial position
-        #sc.robots[0].setPosition([0.0, 0.0, math.pi/2]) 
-        #sc.robots[1].setPosition([-2.2, -1.0, 0.3])
-        sp.plot(4, tf)
+        tf = 40 # must be greater than 1
+        sc.resetPosition()
+        sp.plot(3, tf)
+        
         while sc.simulate():
-            sc.renderScene(waitTime = int(sc.dt * 1000))
-            #sc.showOccupancyMap(waitTime = int(sc.dt * 1000))
+            #sc.renderScene(waitTime = int(sc.dt * 1000))
+            sc.showOccupancyMap(waitTime = int(sc.dt * 1000))
             
             #print("---------------------")
             #print("t = %.3f" % sc.t, "s")
             
             if sc.t > 1:
                 maxAbsError = sc.getMaxFormationError()
-                if maxAbsError < 0.01 and errorCheckerEnabled:
-                    #tf = sc.t - 0.01
-                    # set for how many seconds after convergence the simulator shall run
-                    tExtra = 10
-                    tf = sc.t + tExtra
-                    errorCheckerEnabled = False
-                    print('Ending in ', str(tExtra), ' seconds...')
+                if maxAbsError < 0.01:
+                    pass #tf = sc.t - 0.01
             
             #sp.plot(0, tf)
             sp.plot(2, tf)
             #sp.plot(1, tf) 
             sp.plot(3, tf)
             sp.plot(4, tf)
-            #sp.plot(5, tf)
-            #sp.plot(6, tf)
+            sp.plot(6, tf)
+
             if sc.t > tf:
-                message = "maxAbsError = {0:.3f} m".format(maxAbsError)
-                sc.log(message)
-                print(message)
+                print('maxAbsError = ', maxAbsError)
                 break
             
             
+                
+        
+            #print('robot 0: ', sc.robots[0].xi.x, ', ', sc.robots[0].xi.y, ', ', sc.robots[0].xi.theta)
+            #print('robot 1: ', sc.robots[1].xi.x, ', ', sc.robots[1].xi.y, ', ', sc.robots[1].xi.theta)
+            #print('robot 2: ', sc.robots[2].xi.x, ', ', sc.robots[2].xi.y, ', ', sc.robots[2].xi.theta)
+            #print('y01: ' + str(sc.robots[1].xi.y - sc.robots[0].xi.y))
+            #print('x02: ' + str(sc.robots[2].xi.x - sc.robots[0].xi.x))
         sc.deallocate()
     except KeyboardInterrupt:
         x = input('Quit?(y/n)')
         sc.deallocate()
         if x == 'y' or x == 'Y':
             tf = sc.t - 0.01
-            #sp.plot(0, tf)
+            
             sp.plot(2, tf)
-            #sp.plot(1, tf) 
             sp.plot(3, tf)
             sp.plot(4, tf)
-            #sp.plot(5, tf)
-            #sp.plot(6, tf)
+            sp.plot(6, tf)
+
             raise Exception('Aborted.')
         
     except:
@@ -143,14 +121,11 @@ def generateData():
         return sc
     else:
         return None
-
-
-
 # main
-import saver
-numRun = 1
+numRun = 1000
 dataList = []
 
+fcl.init_test()
 
 for i in range(0, numRun):
     print('Run #: ', i, '...')
@@ -158,7 +133,6 @@ for i in range(0, numRun):
     sc = generateData()
     if sc is not None:
         # if the list is empty
-        saver.save(sc) # save data
         if not dataList:
             for robot in sc.robots:
                 dataList.append(robot.data)
