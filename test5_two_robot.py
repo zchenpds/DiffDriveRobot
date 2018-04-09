@@ -110,7 +110,7 @@ def generateData():
             sp.plot(3, tf)
             sp.plot(4, tf)
             #sp.plot(5, tf)
-            #sp.plot(6, tf)
+            sp.plot(6, tf)
             if sc.t > tf:
                 message = "maxAbsError = {0:.3f} m".format(maxAbsError)
                 sc.log(message)
@@ -130,7 +130,7 @@ def generateData():
             sp.plot(3, tf)
             sp.plot(4, tf)
             #sp.plot(5, tf)
-            #sp.plot(6, tf)
+            sp.plot(6, tf)
             raise Exception('Aborted.')
         
     except:
