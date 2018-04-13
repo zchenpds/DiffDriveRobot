@@ -199,9 +199,8 @@ class ScenePlot():
                         
                         eji = np.array([xi - xj, yi - yj])
                         ejid = np.array([xid - xjd, yid - yjd])
-                        
                         angle = math.acos(np.inner(eji, ejid) / 
-                                 np.linalg.norm(eji) * np.linalg.norm(ejid))
+                             np.linalg.norm(eji) / np.linalg.norm(ejid))
                         
                         # If this is the first time this type of plot is drawn
                         if k not in self.sc.ydict[type].keys():
