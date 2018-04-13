@@ -27,7 +27,7 @@ class Data():
         if self.robot.scene.dynamics == 13:
             self.d['obs2'] = np.zeros((0, 17), dtype = np.float32)
         elif self.robot.scene.dynamics == 14:
-            self.d['obs2'] = np.zeros((0, 4), dtype = np.float32)
+            self.d['obs2'] = np.zeros((0, 10), dtype = np.float32)
         else:
             raise Exception("Undefined robot dynamics for data recording", self.robot.dynamics)
         self.d['actions'] = np.zeros((0, 2), dtype = np.float32)
@@ -127,9 +127,11 @@ class Data():
             elif psi < -math.pi:
                 psi += 2 * math.pi
                 
-            obs2Data = [[#peer.xid.vRef, rhoi, psi, # 1, 2, 3: mode = -10
-                         peer.xi.x, peer.xi.y,  # 1, 2
-                         peer.xid.x, peer.xid.y]] # 3, 4 : mode = -11
+            obs2Data = [[peer.xid.vRef, rhoi, psi, # 1, 2, 3
+                         peer.xid.x - peer.xi.x, peer.xid.y - peer.xi.y,  # 4, 5
+                         peer.xid.x, peer.xid.y, # 6, 7
+                         peer.xi.x, peer.xi.y, # 8, 9
+                         thetai]] # 10 : mode = -11
                          
         self.d['obs2'] = np.append(self.d['obs2'], obs2Data, axis = 0)
         self.d['actions'] = np.append(self.d['actions'], 
