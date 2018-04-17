@@ -149,8 +149,10 @@ class Data():
             os.makedirs(directory)
         count = 0
         for filename in os.listdir(directory):
+            if filename[0:4] != "data" or filename[-4:] != ".npz":
+                continue
             name, _ = os.path.splitext(filename)
-            n = int(name[4:])
+            n = int(name[4:7])
             if count < n:
                 count = n
         count += 1
