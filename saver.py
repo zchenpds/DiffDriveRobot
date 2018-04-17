@@ -17,7 +17,7 @@ def save(sc):
     count = 0
     for filename in os.listdir(directory):
         name, _ = os.path.splitext(filename)
-        n = int(name[3:])
+        n = int(name[2:])
         if count < n:
             count = n
     count += 1

@@ -26,7 +26,7 @@ class Data():
         self.d['observations1'] = np.zeros((0, pc.lenScanVector), dtype = np.float32)
         if self.robot.scene.dynamics == 13:
             self.d['obs2'] = np.zeros((0, 17), dtype = np.float32)
-        elif self.robot.scene.dynamics == 14:
+        elif self.robot.scene.dynamics == 14 or self.robot.scene.dynamics == 16:
             self.d['obs2'] = np.zeros((0, 10), dtype = np.float32)
         else:
             raise Exception("Undefined robot dynamics for data recording", self.robot.dynamics)
@@ -116,7 +116,7 @@ class Data():
                         followerXid.vx, followerXid.vy, #14, 15: mode = -3
                         vLeader[0, 0], vLeader[0, 1] #16, 17: mode = -3
                         ]]
-        elif self.robot.scene.dynamics == 14:
+        elif self.robot.scene.dynamics == 14 or self.robot.scene.dynamics == 16:
             peer = self.robot
             phii = math.atan2(peer.xid.y - peer.xi.y, peer.xid.x - peer.xi.x)
             rhoi = ((peer.xid.x - peer.xi.x)**2 + (peer.xid.y - peer.xi.y)**2) ** 0.5
@@ -147,7 +147,14 @@ class Data():
         directory = 'data'
         if not os.path.exists(directory):
             os.makedirs(directory)
-        path = os.path.join(directory, 'data' + str(i))
+        count = 0
+        for filename in os.listdir(directory):
+            name, _ = os.path.splitext(filename)
+            n = int(name[4:])
+            if count < n:
+                count = n
+        count += 1
+        path = os.path.join(directory, 'data' + str(count).zfill(3) + '_' + str(i))
         np.savez(path, **(self.d))
         message = "Training data of length {0:d} saved to " + path + ".npz"
         message = message.format(len(self.d['epi_starts']))
