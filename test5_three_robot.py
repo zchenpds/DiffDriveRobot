@@ -31,29 +31,42 @@ def initRef(sc):
         message = message.format(sc.referenceSpeed, sc.referenceOmega, radiusLeader)
         sc.log(message)
         print(message)
-    elif sc.dynamics == sc.DYNAMICS_MODEL_BASED_LINEAR_GOAL:
-        g = 5.0 
+    elif (sc.dynamics == sc.DYNAMICS_MODEL_BASED_LINEAR_GOAL or
+          sc.dynamics == sc.DYNAMICS_MODEL_BASED_DISTANCE_GOAL):
+        g = 4.0 
         goalList = [[g, g], [-g, g], [g, -g], [-g, -g]]
         sc.xid.x, sc.xid.y = random.choice(goalList)
         sc.xid.vRef = 0.7
-        message = "Goal: ({0:.3f}, {1:.3f}); Ref speed: {2:.3f} m/s"
+        message = "Goal: ({0:.3f}, {1:.3f})"
         message = message.format(sc.xid.x, sc.xid.y, sc.xid.vRef)
         sc.xid.theta = 0
         sc.xid.sDot = 0
         sc.xid.thetaDot = 0
-        
+
+def plot(sp, tf):
+    #sp.plot(0, tf)
+    sp.plot(2, tf) # Formation Separation
+    sp.plot(21, tf) # Formation Orientation
+    if sp.sc.dynamics == 16:
+        sp.plot(23, tf)
+    else:
+        sp.plot(22, tf)
+    sp.plot(4, tf)
+    #sp.plot(5, tf)
+    sp.plot(6, tf)
+    
 def generateData(i):
     sc = Scene(fileName = __file__, recordData = True, runNum = i)
     sp = ScenePlot(sc)
     sp.saveEnabled = True # save plots?
     #sc.occupancyMapType = sc.OCCUPANCY_MAP_THREE_CHANNEL
     sc.occupancyMapType = sc.OCCUPANCY_MAP_BINARY
-    sc.dynamics = sc.DYNAMICS_MODEL_BASED_LINEAR_GOAL # robot dynamics
+    sc.dynamics = sc.DYNAMICS_MODEL_BASED_DISTANCE_GOAL # robot dynamics
     sc.errorType = 0
     try:
         sc.addRobot(np.float32([[-2, 0, 0], [0.0, 0.0, 0.0]]), role = sc.ROLE_PEER)
-        sc.addRobot(np.float32([[1, 3, 0], [-1.0, 0.0, 0.0]]), role = sc.ROLE_PEER)
-        sc.addRobot(np.float32([[2, 3, 0], [-0.5, 1.732/2, 0.0]]), role = sc.ROLE_PEER)
+        sc.addRobot(np.float32([[1, 3, 0], [-2.0/2, 0.0, 0.0]]), role = sc.ROLE_PEER)
+        sc.addRobot(np.float32([[2, 3, 0], [-1.0/2, 1.732/2, 0.0]]), role = sc.ROLE_PEER)
 #==============================================================================
 #         sc.addRobot(np.float32([[1, 3, 0], [0, -1, 0]]), 
 #                     dynamics = sc.DYNAMICS_LEARNED, 
@@ -67,8 +80,8 @@ def generateData(i):
         # vrep related
         sc.initVrep()
         # Choose sensor type
-        sc.SENSOR_TYPE = "VPL16" # None, 2d, VPL16, kinect
-        #sc.SENSOR_TYPE = "None" # None, 2d, VPL16, kinect
+        #sc.SENSOR_TYPE = "VPL16" # None, 2d, VPL16, kinect
+        sc.SENSOR_TYPE = "None" # None, 2d, VPL16, kinect
         sc.objectNames = ['Pioneer_p3dx', 'Pioneer_p3dx_leftMotor', 'Pioneer_p3dx_rightMotor']
         
         if sc.SENSOR_TYPE == "None":
@@ -94,7 +107,7 @@ def generateData(i):
             sc.setVrepHandles(2, '#1')
         
         #sc.renderScene(waitTime = 3000)
-        tf = 20 # must be greater than 1
+        tf = 15 # must be greater than 1
         errorCheckerEnabled = False
         initRef(sc)
         sc.resetPosition() # Random initial position
@@ -104,7 +117,7 @@ def generateData(i):
         sp.plot(4, tf)
         while sc.simulate():
             #sc.renderScene(waitTime = int(sc.dt * 1000))
-            sc.showOccupancyMap(waitTime = int(sc.dt * 1000))
+            #sc.showOccupancyMap(waitTime = int(sc.dt * 1000))
             
             #print("---------------------")
             #print("t = %.3f" % sc.t, "s")
@@ -119,13 +132,7 @@ def generateData(i):
                     errorCheckerEnabled = False
                     print('Ending in ', str(tExtra), ' seconds...')
             
-            #sp.plot(0, tf)
-            sp.plot(2, tf)
-            sp.plot(21, tf) 
-            sp.plot(22, tf)
-            sp.plot(4, tf)
-            #sp.plot(5, tf)
-            sp.plot(6, tf)
+            plot(sp, tf)
             if sc.t > tf:
                 message = "maxAbsError = {0:.3f} m".format(maxAbsError)
                 sc.log(message)
@@ -137,13 +144,7 @@ def generateData(i):
         x = input('Quit?(y/n)')
         if x == 'y' or x == 'Y':
             tf = sc.t - 0.01
-            #sp.plot(0, tf)
-            sp.plot(2, tf)
-            #sp.plot(1, tf) 
-            sp.plot(3, tf)
-            sp.plot(4, tf)
-            #sp.plot(5, tf)
-            sp.plot(6, tf)
+            plot(sp, tf)
             raise Exception('Aborted.')
     
     except VrepError as err:
@@ -164,7 +165,7 @@ def generateData(i):
 
 # main
 import saver
-numRun = 200
+numRun = 30
 dataList = []
 
 

@@ -27,6 +27,7 @@ class Scene():
         
         # formation reference link
         self.xid = State(0.0, 0.0, math.pi / 2)
+        self.xi = State(0.0, 0.0, math.pi / 2)
         
         # for plots
         self.ts = [] # timestamps
@@ -64,6 +65,7 @@ class Scene():
         self.DYNAMICS_MODEL_BASED_STABILIZER = 12
         self.DYNAMICS_MODEL_BASED_LINEAR = 13
         self.DYNAMICS_MODEL_BASED_LINEAR_GOAL = 14
+        self.DYNAMICS_MODEL_BASED_DISTANCE_GOAL = 16
         self.DYNAMICS_LEARNED = 30
         
         # follower does not have knowledge of absolute position
@@ -279,7 +281,31 @@ class Scene():
             for i in range(0, len(self.robots)):
                 while True:
                     minDij = float("inf")
-                    alpha1 = math.pi * (-2/3*i - 1/3* random.random())
+                    #alpha1 = math.pi * (-2/3*i - 1/3* random.random()) # limited
+                    alpha1 = math.pi * (2 * random.random()) # arbitrary
+                    rho1 = 4 + 2 * random.random()
+                    x1 = rho1 * math.cos(alpha1)
+                    y1 = rho1 * math.sin(alpha1)
+                    theta1 = 2 * math.pi * random.random()
+                    for j in range(0, i):
+                        dij = ((x1 - self.robots[j].xi.x)**2 + 
+                               (y1 - self.robots[j].xi.y)**2)**0.5
+                        # print('j = ', j, '( %.3f' % self.robots[j].xi.x, ', %.3f'%self.robots[j].xi.y, '), ', 'dij = ', dij)
+                        if dij < minDij:
+                            minDij = dij # find the smallest dij for all j
+                    print('Min distance: ', minDij, 'from robot #', i, 'to other robots.')
+                    # if the smallest dij is greater than allowed,
+                    if minDij >= MIN_DISTANCE:
+                        self.robots[i].setPosition([x1, y1, theta1])
+                        break # i++
+        elif self.robots[0].dynamics == 16:
+            xbar = 0
+            ybar = 0
+            for i in range(0, len(self.robots)):
+                while True:
+                    minDij = float("inf")
+                    #alpha1 = math.pi * (-2/3*i - 1/3* random.random()) # limited
+                    alpha1 = math.pi * (2 * random.random()) # arbitrary
                     rho1 = 2 * random.random()
                     x1 = rho1 * math.cos(alpha1)
                     y1 = rho1 * math.sin(alpha1)
@@ -295,6 +321,13 @@ class Scene():
                     if minDij >= MIN_DISTANCE:
                         self.robots[i].setPosition([x1, y1, theta1])
                         break # i++
+                xbar += x1
+                ybar += y1
+            self.xi.x = xbar / len(self.robots)
+            self.xi.y = ybar / len(self.robots)
+            self.xid.dpbarx = self.xi.x - self.xid.x
+            self.xid.dpbary = self.xi.y - self.xid.y
+            
         #input('One moment.')
         # End of resetPosition()
 
@@ -322,7 +355,18 @@ class Scene():
         elif self.robots[0].dynamics == 14:
             # do nothing because xid is time-invariant
             pass
-        
+        elif self.robots[0].dynamics == 16:
+            xbar = 0
+            ybar = 0
+            for robot in self.robots:
+                xbar += robot.xi.x
+                ybar += robot.xi.y
+            self.xi.x = xbar / len(self.robots)
+            self.xi.y = ybar / len(self.robots)
+            self.xid.dpbarx = self.xi.x - self.xid.x
+            self.xid.dpbary = self.xi.y - self.xid.y
+            #print('dpbarx: ', self.xid.dpbarx, ', dpbary: ', self.xid.dpbary)
+            #print('dpbarx: ', self.xid.dpbarx, ', dpbary: ', self.xid.dpbary)
         
     def simulate(self):
         # vrep related

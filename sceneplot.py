@@ -46,6 +46,8 @@ class ScenePlot():
             c = (0, 0, brightness)
         elif i == 3:
             c = (0, brightness, brightness)
+        else:
+            c = (0, 0, 0)
         return c
         
     def plot(self, type = 0, tf = 0):
@@ -146,7 +148,7 @@ class ScenePlot():
                     
                     if self.sc.dynamics == 13:
                         j2 = 1
-                    elif self.sc.dynamics == 14:
+                    elif self.sc.dynamics == 14 or self.sc.dynamics == 16:
                         j2 = i
                     for j in range(0, j2):
                         if self.sc.adjMatrix[i, j] == 0:
@@ -174,7 +176,7 @@ class ScenePlot():
                 for k in range(0, len(self.sc.ydict[type])):
                     plt.plot(self.sc.ts, errors[k], '-')
                 plt.xlabel('t (s)')
-                plt.ylabel('Separation Error (m)')
+                plt.ylabel('Formation Separation Error (m)')
 
         elif type == 21: # Formation orientation error
             if not self.sc.ploted[type]:
@@ -187,7 +189,7 @@ class ScenePlot():
                     
                     if self.sc.dynamics == 13:
                         j2 = 1
-                    elif self.sc.dynamics == 14:
+                    elif self.sc.dynamics == 14 or self.sc.dynamics == 16:
                         j2 = i
                     for j in range(0, j2):
                         if self.sc.adjMatrix[i, j] == 0:
@@ -241,6 +243,31 @@ class ScenePlot():
                     plt.plot(self.sc.ts, errors[i], '-')
                 plt.xlabel('t (s)')
                 plt.ylabel('Distance from goal (m)')
+
+        elif type == 23: # Ceter distance from goal
+            if not self.sc.ploted[type]:
+                # If this is the first time this type of plot is drawn
+                if 0 not in self.sc.ydict[type].keys():
+                    self.sc.ydict[type][0] = []
+                xbar = 0
+                ybar = 0                
+                for i in range(0, len(self.sc.robots)):
+                    xbar += self.sc.robots[i].xi.x
+                    ybar += self.sc.robots[i].xi.y
+                xbar /= len(self.sc.robots)
+                ybar /= len(self.sc.robots)
+                xd = self.sc.xid.x
+                yd = self.sc.xid.y
+                distance = ((xbar - xd)**2 + (ybar - yd)**2)**0.5
+                self.sc.ydict[type][0].append(distance)
+                #print(self.sc.ydict[type][0])
+                
+            if self.sc.t > tf:
+                error = self.sc.ydict[type][0]
+                plt.figure(type)
+                plt.plot(self.sc.ts, error, '-', color = (0,0,0))
+                plt.xlabel('t (s)')
+                plt.ylabel('Center distance from goal (m)')
 
         elif type == 3: # Formation Error type 3
             if not self.sc.ploted[type]:
@@ -387,7 +414,7 @@ class ScenePlot():
             # Show action
             if self.sc.dynamics == 13:
                 j1 = 1
-            elif self.sc.dynamics == 14:
+            elif self.sc.dynamics == 14 or self.sc.dynamics == 16:
                 j1 = 0
             if not self.sc.ploted[type]:
                 for i in range(len(self.sc.robots)):
