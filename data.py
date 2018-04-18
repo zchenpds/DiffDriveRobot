@@ -11,7 +11,7 @@ import math
 
 class Data():
     def __init__(self, robot):
-        self.mode = -11
+        self.mode = -12
         self.q = queue.Queue()
         
         self.robot = robot
@@ -26,8 +26,10 @@ class Data():
         self.d['observations1'] = np.zeros((0, pc.lenScanVector), dtype = np.float32)
         if self.robot.scene.dynamics == 13:
             self.d['obs2'] = np.zeros((0, 17), dtype = np.float32)
-        elif self.robot.scene.dynamics == 14 or self.robot.scene.dynamics == 16:
+        elif self.robot.scene.dynamics == 14:
             self.d['obs2'] = np.zeros((0, 10), dtype = np.float32)
+        elif self.robot.scene.dynamics == 16:
+            self.d['obs2'] = np.zeros((0, 2), dtype = np.float32)
         else:
             raise Exception("Undefined robot dynamics for data recording", self.robot.dynamics)
         self.d['actions'] = np.zeros((0, 2), dtype = np.float32)
@@ -75,6 +77,11 @@ class Data():
             elif mode == -11: # Peer's state
                 peer = self.robot
                 state = np.array([[peer.xi.x, peer.xi.y, peer.xid.x, peer.xid.y]])
+            elif mode == -12: # Peer's state
+                peer = self.robot
+                psi = peer.xid.theta - peer.xi.theta
+                dpbar = (peer.scene.xid.dpbarx**2 + peer.scene.xid.dpbary**2)**0.5
+                state = np.array([[dpbar, psi]])
             ret = (obs0, state)
         
         return ret
@@ -116,7 +123,7 @@ class Data():
                         followerXid.vx, followerXid.vy, #14, 15: mode = -3
                         vLeader[0, 0], vLeader[0, 1] #16, 17: mode = -3
                         ]]
-        elif self.robot.scene.dynamics == 14 or self.robot.scene.dynamics == 16:
+        elif self.robot.scene.dynamics == 14:
             peer = self.robot
             phii = math.atan2(peer.xid.y - peer.xi.y, peer.xid.x - peer.xi.x)
             rhoi = ((peer.xid.x - peer.xi.x)**2 + (peer.xid.y - peer.xi.y)**2) ** 0.5
@@ -132,7 +139,12 @@ class Data():
                          peer.xid.x, peer.xid.y, # 6, 7
                          peer.xi.x, peer.xi.y, # 8, 9
                          thetai]] # 10 : mode = -11
-                         
+        elif self.robot.scene.dynamics == 16:
+            peer = self.robot
+            psi = peer.xid.theta - peer.xi.theta
+            dpbar = (peer.scene.xid.dpbarx**2 + peer.scene.xid.dpbary**2)**0.5
+            obs2Data = [[dpbar, psi]] # 10 : mode = -11
+            print("Robot", self.robot.index, ", psi: ", psi)
         self.d['obs2'] = np.append(self.d['obs2'], obs2Data, axis = 0)
         self.d['actions'] = np.append(self.d['actions'], 
                   [[self.robot.v1Desired, self.robot.v2Desired]], axis = 0)

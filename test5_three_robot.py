@@ -18,7 +18,7 @@ import random
 
 #fcl = DeepFCL(50, 50, 2, 1)
 
-def initRef(sc):
+def initRef(sc, i):
     if sc.dynamics == sc.DYNAMICS_MODEL_BASED_LINEAR:
         #radiusLeaderList = [2.0, 3.0, 4.0]
         #speedLeaderList = [0.2, 0.3, 0.4]
@@ -35,7 +35,8 @@ def initRef(sc):
           sc.dynamics == sc.DYNAMICS_MODEL_BASED_DISTANCE_GOAL):
         g = 4.0 
         goalList = [[g, g], [-g, g], [g, -g], [-g, -g]]
-        sc.xid.x, sc.xid.y = random.choice(goalList)
+        #sc.xid.x, sc.xid.y = random.choice(goalList)
+        sc.xid.x, sc.xid.y = goalList[i]
         sc.xid.vRef = 0.7
         message = "Goal: ({0:.3f}, {1:.3f})"
         message = message.format(sc.xid.x, sc.xid.y, sc.xid.vRef)
@@ -80,8 +81,8 @@ def generateData(i):
         # vrep related
         sc.initVrep()
         # Choose sensor type
-        #sc.SENSOR_TYPE = "VPL16" # None, 2d, VPL16, kinect
-        sc.SENSOR_TYPE = "None" # None, 2d, VPL16, kinect
+        sc.SENSOR_TYPE = "VPL16" # None, 2d, VPL16, kinect
+        #sc.SENSOR_TYPE = "None" # None, 2d, VPL16, kinect
         sc.objectNames = ['Pioneer_p3dx', 'Pioneer_p3dx_leftMotor', 'Pioneer_p3dx_rightMotor']
         
         if sc.SENSOR_TYPE == "None":
@@ -107,9 +108,9 @@ def generateData(i):
             sc.setVrepHandles(2, '#1')
         
         #sc.renderScene(waitTime = 3000)
-        tf = 15 # must be greater than 1
+        tf = 25 # must be greater than 1
         errorCheckerEnabled = False
-        initRef(sc)
+        initRef(sc, i)
         sc.resetPosition() # Random initial position
         # Fixed initial position
         #sc.robots[0].setPosition([0.0, 0.0, math.pi/2]) 
@@ -165,7 +166,7 @@ def generateData(i):
 
 # main
 import saver
-numRun = 30
+numRun = 4
 dataList = []
 
 

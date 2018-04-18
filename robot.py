@@ -23,6 +23,13 @@ import time
 LIMIT_MAX_ACC = False
 accMax = 0.5 # m/s^2
 
+def saturate(dxp, dyp, dxypMax):
+    dxyp = (dxp**2 + dyp**2)**0.5
+    if dxyp > dxypMax:
+        dxp = dxp / dxyp * dxypMax
+        dyp = dyp / dxyp * dxypMax
+    return dxp, dyp
+
 class Robot():
     def __init__(self, scene):
         self.scene = scene
@@ -365,7 +372,8 @@ class Robot():
                 tauix += tauij0 * pijx / pij0
                 tauiy += tauij0 * pijy / pij0
             
-            # Collision avoidance
+            # Achieve and keep formation
+            #tauix, tauiy = saturate(tauix, tauiy, dxypMax)
             vxp += -K3 * tauix
             vyp += -K3 * tauiy
             
@@ -379,10 +387,7 @@ class Robot():
             #dxp = self.xi.xp - self.xid.xp
             #dyp = self.xi.yp - self.xid.yp
             # Limit magnitude
-            dxyp = (dxp**2 + dyp**2)**0.5
-            if dxyp > dxypMax:
-                dxp = dxp / dxyp * dxypMax
-                dyp = dyp / dxyp * dxypMax
+            dxp, dyp = saturate(dxp, dyp, dxypMax)
             vxp += -K1 * dxp
             vyp += -K1 * dyp
             
@@ -678,6 +683,7 @@ class Robot():
         v2 = self.vActual - self.omegaActual * self.l / 2
         return np.array([[v1, v2]])
         
+
 
        
 class VrepError(Exception):
