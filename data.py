@@ -144,7 +144,7 @@ class Data():
             psi = peer.xid.theta - peer.xi.theta
             dpbar = (peer.scene.xid.dpbarx**2 + peer.scene.xid.dpbary**2)**0.5
             obs2Data = [[dpbar, psi]] # 10 : mode = -11
-            print("Robot", self.robot.index, ", psi: ", psi)
+            #print("Robot", self.robot.index, ", psi: ", psi)
         self.d['obs2'] = np.append(self.d['obs2'], obs2Data, axis = 0)
         self.d['actions'] = np.append(self.d['actions'], 
                   [[self.robot.v1Desired, self.robot.v2Desired]], axis = 0)
