@@ -4,6 +4,7 @@ Created on Tue Feb 20 17:22:47 2018
 
 @author: cz
 """
+import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
 import math
@@ -95,48 +96,6 @@ class ScenePlot():
                 plt.xlabel('t (s)')
                 plt.ylabel('y_i - y_di (m)')
                 
-#==============================================================================
-#         elif type == 2: # Formation Error
-#             if not self.sc.ploted[type]:
-#                 k = 0
-#                 for i in range(len(self.sc.robots)):
-#                     for j in range(0, i):
-#                         if self.sc.adjMatrix[i, j] != 0:
-#                             # If this is the first time this type of plot is drawn
-#                             if k not in self.sc.ydict[type].keys():
-#                                 self.sc.ydict[type][k] = []
-#                                 # print(self.sc.ydict[type].keys())
-#                                 # print('i = ', i, 'j = ', j)
-#                             xi = self.sc.robots[i].xi.x
-#                             xj = self.sc.robots[j].xi.x
-#                             yi = self.sc.robots[i].xi.y
-#                             yj = self.sc.robots[j].xi.y
-#                             xij = xi - xj
-#                             yij = yi - yj
-#                             d = (xij**2 + yij**2)**0.5
-#                             xi = self.sc.robots[i].xid.x
-#                             xj = self.sc.robots[j].xid.x
-#                             yi = self.sc.robots[i].xid.y
-#                             yj = self.sc.robots[j].xid.y
-#                             xijd = xi - xj
-#                             yijd = yi - yj
-#                             d0 = (xijd**2 + yijd**2)**0.5
-#                             self.sc.ydict[type][k].append(d - d0)
-#                             #print(self.sc.ydict[type][k])
-#                             k += 1
-#             if self.sc.t > tf:
-#                 errors = self.sc.ydict[type]
-#                 plt.figure(type)
-#                 for k in range(len(errors)):
-#                     try:
-#                         plt.plot(self.sc.ts, errors[k], '-')
-#                     except:
-#                         print(k)
-#                         print(len(self.sc.ts))
-#                         print(len(errors[k]))
-#                 plt.xlabel('t (s)')
-#                 plt.ylabel('Sepration Error (m)')
-#==============================================================================
         elif type == 2: # Formation Error type 2
             if not self.sc.ploted[type]:
                 k = 0
@@ -166,15 +125,21 @@ class ScenePlot():
                         # If this is the first time this type of plot is drawn
                         if k not in self.sc.ydict[type].keys():
                             self.sc.ydict[type][k] = []
+                            self.sc.ydict2[type][k] = (i, j) # for legend
                         self.sc.ydict[type][k].append(error)
                         
                         k += 1
                         
             if self.sc.t > tf:
                 errors = self.sc.ydict[type]
+                legends = self.sc.ydict2[type]
+                curves = []
                 plt.figure(type)
                 for k in range(0, len(self.sc.ydict[type])):
-                    plt.plot(self.sc.ts, errors[k], '-')
+                    curve, = plt.plot(self.sc.ts, errors[k], '-', label = str(legends[k]))
+                    curves.append(curve)
+                if int(matplotlib.__version__[0]) == 2:
+                    plt.legend(handles = curves)
                 plt.xlabel('t (s)')
                 plt.ylabel('Formation Separation Error (m)')
 
@@ -207,15 +172,21 @@ class ScenePlot():
                         # If this is the first time this type of plot is drawn
                         if k not in self.sc.ydict[type].keys():
                             self.sc.ydict[type][k] = []
+                            self.sc.ydict2[type][k] = (i, j) # for legend
                         self.sc.ydict[type][k].append(angle)
                         
                         k += 1
                         
             if self.sc.t > tf:
                 errors = self.sc.ydict[type]
+                legends = self.sc.ydict2[type]
+                curves = []
                 plt.figure(type)
                 for k in range(0, len(self.sc.ydict[type])):
-                    plt.plot(self.sc.ts, errors[k], '-')
+                    curve, = plt.plot(self.sc.ts, errors[k], '-', label = str(legends[k]))
+                    curves.append(curve)
+                if int(matplotlib.__version__[0]) == 2:
+                    plt.legend(handles = curves)
                 plt.xlabel('t (s)')
                 plt.ylabel('Formation Orientation Error (rad)')
 
@@ -345,18 +316,21 @@ class ScenePlot():
             # Show Figure
             if self.sc.t > tf:
                 plt.figure(type)
+                curves = []
                 for i in range(len(self.sc.robots)):
                     c = self.getRobotColor(i)
-                    plt.plot(self.sc.ydict2[type][i][:, 0], 
+                    curve, = plt.plot(self.sc.ydict2[type][i][:, 0], 
                              self.sc.ydict2[type][i][:, 1], 
-                             '-', color = c)
+                             '-', color = c, label = str(i))
+                    curves.append(curve)
                     for j in range(len(self.sc.tss)):
                         plt.plot(self.sc.ydict[type][i][j, 0], 
                                  self.sc.ydict[type][i][j, 1], 
                                  marker=(3, 0, self.sc.ydict[type][i][j, 2]),
                                  markersize=20, linestyle='None',
                                  color=c, fillstyle="none")
-                
+                if int(matplotlib.__version__[0]) == 2:
+                    plt.legend(handles = curves)
                 l = len(self.sc.robots)
                 for i in range(len(self.sc.robots)):
                     for j in range(len(self.sc.tss)):
@@ -406,7 +380,8 @@ class ScenePlot():
                                       color = c, label = 'Actual')
                     curve2, = plt.plot(self.sc.ts, self.sc.ydict2[type][i], '--', 
                                       color = c, label = 'Desired')
-                plt.legend(handles = [curve1, curve2])
+                if int(matplotlib.__version__[0]) == 2:
+                    plt.legend(handles = [curve1, curve2])
                 plt.xlabel('t (s)')
                 plt.ylabel('v (m/s)')
                 
@@ -434,7 +409,8 @@ class ScenePlot():
                                       color = c, label = 'Left Wheel Velocity')
                     curve2, = plt.plot(self.sc.ts, self.sc.ydict2[type][i], '--', 
                                       color = c, label = 'Right Wheel Velocity')
-                #plt.legend(handles = [curve1, curve2])
+                if int(matplotlib.__version__[0]) == 2:
+                    plt.legend(handles = [curve1, curve2])
                 plt.xlabel('t (s)')
                 plt.ylabel('Robot Actions (m/s)')
                 
@@ -461,7 +437,8 @@ class ScenePlot():
                                       color = c, label = 'Actual')
                     curve2, = plt.plot(self.sc.ts, self.sc.ydict2[type][i], '--', 
                                       color = c, label = 'Desired')
-                plt.legend(handles = [curve1, curve2])
+                if int(matplotlib.__version__[0]) == 2:
+                    plt.legend(handles = [curve1, curve2])
                 plt.xlabel('t (s)')
                 plt.ylabel('omega (rad/s)') 
         
@@ -488,7 +465,8 @@ class ScenePlot():
                                       color = c, label = 'alpha')
                     curve2, = plt.plot(self.sc.ts, self.sc.ydict2[type][i], '--', 
                                       color = c, label = 'beta')
-                plt.legend(handles = [curve1, curve2])
+                if int(matplotlib.__version__[0]) == 2:
+                    plt.legend(handles = [curve1, curve2])
                 plt.xlabel('t (s)')
                 plt.ylabel('angles (deg)')
                 
