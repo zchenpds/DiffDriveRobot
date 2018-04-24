@@ -55,11 +55,12 @@ def initRef(sc, i):
 def plot(sp, tf):
     #sp.plot(0, tf)
     sp.plot(2, tf) # Formation Separation
-    sp.plot(21, tf) # Formation Orientation
-    if sp.sc.dynamics == 16 or sp.sc.dynamics == 17:
-        sp.plot(23, tf)
-    else:
-        sp.plot(22, tf)
+    if sp.sc.dynamics == 14:
+        sp.plot(21, tf) # Formation Orientation
+    if sp.sc.dynamics == 16:
+        sp.plot(23, tf) # distance from goal
+    elif sp.sc.dynamics == 14:
+        sp.plot(22, tf) # distances from goals
     sp.plot(4, tf)
     #sp.plot(5, tf)
     sp.plot(6, tf)
