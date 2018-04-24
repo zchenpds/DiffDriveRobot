@@ -43,12 +43,20 @@ def initRef(sc, i):
         sc.xid.theta = 0
         sc.xid.sDot = 0
         sc.xid.thetaDot = 0
+    elif sc.dynamics == sc.DYNAMICS_MODEL_BASED_DISTANCE_REFVEL:
+        sc.xid.vRefMag = 0.7
+        sc.xid.vRefAng = 0
+        message = "vRefMag: {0:.3f}, vRefAng: {1:.3f}"
+        message = message.format(sc.xid.vRefMag, sc.xid.vRefAng)
+        sc.xid.theta = 0
+        sc.xid.sDot = 0
+        sc.xid.thetaDot = 0
 
 def plot(sp, tf):
     #sp.plot(0, tf)
     sp.plot(2, tf) # Formation Separation
     sp.plot(21, tf) # Formation Orientation
-    if sp.sc.dynamics == 16:
+    if sp.sc.dynamics == 16 or sp.sc.dynamics == 17:
         sp.plot(23, tf)
     else:
         sp.plot(22, tf)
@@ -62,7 +70,7 @@ def generateData(i):
     sp.saveEnabled = True # save plots?
     #sc.occupancyMapType = sc.OCCUPANCY_MAP_THREE_CHANNEL
     sc.occupancyMapType = sc.OCCUPANCY_MAP_BINARY
-    sc.dynamics = sc.DYNAMICS_MODEL_BASED_DISTANCE_GOAL # robot dynamics
+    sc.dynamics = sc.DYNAMICS_MODEL_BASED_DISTANCE_REFVEL # robot dynamics
     sc.errorType = 0
     try:
         sc.addRobot(np.float32([[-2, 0, 0], [0.0, 0.0, 0.0]]), role = sc.ROLE_PEER)
@@ -108,7 +116,7 @@ def generateData(i):
             sc.setVrepHandles(2, '#1')
         
         #sc.renderScene(waitTime = 3000)
-        tf = 25 # must be greater than 1
+        tf = 12 # must be greater than 1
         errorCheckerEnabled = False
         initRef(sc, i)
         sc.resetPosition() # Random initial position

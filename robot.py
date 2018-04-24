@@ -198,6 +198,10 @@ class Robot():
             self.xid.vxp = self.xid.vx - c * math.sin(self.xid.theta) * thetaDot
             self.xid.vyp = self.xid.vy + c * math.cos(self.xid.theta) * thetaDot
             self.xid.vRef = self.scene.xid.vRef
+        elif self.dynamics == 17:
+            self.xid.theta = self.scene.xid.vRefAng
+			
+			
     def precompute(self):
         self.updateNeighbors()
         if self.dynamics >= 10:
@@ -331,7 +335,7 @@ class Robot():
  
             #print(v1,v2,'model')
         
-        elif self.dynamics >= 15 and self.dynamics <= 16:
+        elif self.dynamics >= 15 and self.dynamics <= 17:
             # For e-puk dynamics
             # Feedback linearization
             # v1: left wheel speed

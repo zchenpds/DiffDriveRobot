@@ -107,7 +107,7 @@ class ScenePlot():
                     
                     if self.sc.dynamics == 13:
                         j2 = 1
-                    elif self.sc.dynamics == 14 or self.sc.dynamics == 16:
+                    elif self.sc.dynamics == 14 or self.sc.dynamics == 16 or self.sc.dynamics == 17:
                         j2 = i
                     for j in range(0, j2):
                         if self.sc.adjMatrix[i, j] == 0:
@@ -154,7 +154,7 @@ class ScenePlot():
                     
                     if self.sc.dynamics == 13:
                         j2 = 1
-                    elif self.sc.dynamics == 14 or self.sc.dynamics == 16:
+                    elif self.sc.dynamics == 14 or self.sc.dynamics == 16 or self.sc.dynamics == 17:
                         j2 = i
                     for j in range(0, j2):
                         if self.sc.adjMatrix[i, j] == 0:
@@ -389,7 +389,7 @@ class ScenePlot():
             # Show action
             if self.sc.dynamics == 13:
                 j1 = 1
-            elif self.sc.dynamics == 14 or self.sc.dynamics == 16:
+            elif self.sc.dynamics == 14 or self.sc.dynamics == 16 or self.sc.dynamics == 17:
                 j1 = 0
             if not self.sc.ploted[type]:
                 for i in range(len(self.sc.robots)):
