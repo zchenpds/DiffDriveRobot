@@ -74,8 +74,8 @@ def generateData(i):
     sc.errorType = 0
     try:
         sc.addRobot(np.float32([[-2, 0, 0], [0.0, 0.0, 0.0]]), role = sc.ROLE_PEER)
-        sc.addRobot(np.float32([[1, 3, 0], [-2.0/2, 0.0, 0.0]]), role = sc.ROLE_PEER)
-        sc.addRobot(np.float32([[2, 3, 0], [-1.0/2, 1.732/2, 0.0]]), role = sc.ROLE_PEER)
+        sc.addRobot(np.float32([[1, 3, 0], [-2.0/4*3, 0.0, 0.0]]), role = sc.ROLE_PEER)
+        sc.addRobot(np.float32([[2, 3, 0], [-1.0/4*3, 1.732/4*3, 0.0]]), role = sc.ROLE_PEER)
 #==============================================================================
 #         sc.addRobot(np.float32([[1, 3, 0], [0, -1, 0]]), 
 #                     dynamics = sc.DYNAMICS_LEARNED, 
@@ -174,7 +174,7 @@ def generateData(i):
 
 # main
 import saver
-numRun = 4
+numRun = 70
 dataList = []
 
 
