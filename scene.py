@@ -28,6 +28,7 @@ class Scene():
         # formation reference link
         self.xid = State(0.0, 0.0, math.pi / 2)
         self.xi = State(0.0, 0.0, math.pi / 2)
+        self.alpha = 1 # desired formation scale
         
         # for plots
         self.ts = [] # timestamps
@@ -307,7 +308,7 @@ class Scene():
                     minDij = float("inf")
                     #alpha1 = math.pi * (-2/3*i - 1/3* random.random()) # limited
                     alpha1 = math.pi * (2 * random.random()) # arbitrary
-                    rho1 = 2 * random.random()
+                    rho1 = 3 + 2 * random.random()
                     x1 = rho1 * math.cos(alpha1)
                     y1 = rho1 * math.sin(alpha1)
                     theta1 = 2 * math.pi * random.random()
@@ -332,6 +333,13 @@ class Scene():
         #input('One moment.')
         # End of resetPosition()
 
+    def scaleDesiredFormation(self, alpha):
+        self.alpha = alpha
+        for robot in self.robots:
+            robot.xid0.x *= alpha
+            robot.xid0.y *= alpha
+            robot.xid.x *= alpha
+            robot.xid.y *= alpha
 
     def propagateXid(self):
         t = self.t

@@ -29,8 +29,6 @@ def initRef(sc, i):
         sc.referenceOmega = sc.referenceSpeed / radiusLeader
         message = "Ref speed: {0:.3f} m/s; Ref omega: {1:.3f} rad/s; Ref radius: {2:.3f} m"
         message = message.format(sc.referenceSpeed, sc.referenceOmega, radiusLeader)
-        sc.log(message)
-        print(message)
     elif (sc.dynamics == sc.DYNAMICS_MODEL_BASED_LINEAR_GOAL or
           sc.dynamics == sc.DYNAMICS_MODEL_BASED_DISTANCE_GOAL):
         g = 4.0 
@@ -44,13 +42,20 @@ def initRef(sc, i):
         sc.xid.sDot = 0
         sc.xid.thetaDot = 0
     elif sc.dynamics == sc.DYNAMICS_MODEL_BASED_DISTANCE_REFVEL:
+        # set desired velocity vector
         sc.xid.vRefMag = 0.7
-        sc.xid.vRefAng = 0
-        message = "vRefMag: {0:.3f}, vRefAng: {1:.3f}"
-        message = message.format(sc.xid.vRefMag, sc.xid.vRefAng)
+        sc.xid.vRefAng = 2 * math.pi * random.random()
         sc.xid.theta = 0
         sc.xid.sDot = 0
         sc.xid.thetaDot = 0
+        # scale desired formation separation
+        alphaList = [1.0, 1.5, 2.0]
+        alpha = random.choice(alphaList)
+        sc.scaleDesiredFormation(alpha)
+        message = "vRefMag: {0:.3f}, vRefAng: {1:.3f}, alpha: {2:.3f}"
+        message = message.format(sc.xid.vRefMag, sc.xid.vRefAng, alpha)
+    sc.log(message)
+    print(message)
 
 def plot(sp, tf):
     #sp.plot(0, tf)
@@ -75,8 +80,8 @@ def generateData(i):
     sc.errorType = 0
     try:
         sc.addRobot(np.float32([[-2, 0, 0], [0.0, 0.0, 0.0]]), role = sc.ROLE_PEER)
-        sc.addRobot(np.float32([[1, 3, 0], [-2.0/4*3, 0.0, 0.0]]), role = sc.ROLE_PEER)
-        sc.addRobot(np.float32([[2, 3, 0], [-1.0/4*3, 1.732/4*3, 0.0]]), role = sc.ROLE_PEER)
+        sc.addRobot(np.float32([[1, 3, 0], [-2.0/2, 0.0, 0.0]]), role = sc.ROLE_PEER)
+        sc.addRobot(np.float32([[2, 3, 0], [-1.0/2, 1.732/2, 0.0]]), role = sc.ROLE_PEER)
 #==============================================================================
 #         sc.addRobot(np.float32([[1, 3, 0], [0, -1, 0]]), 
 #                     dynamics = sc.DYNAMICS_LEARNED, 
@@ -117,7 +122,7 @@ def generateData(i):
             sc.setVrepHandles(2, '#1')
         
         #sc.renderScene(waitTime = 3000)
-        tf = 12 # must be greater than 1
+        tf = 15 # must be greater than 1
         errorCheckerEnabled = False
         initRef(sc, i)
         sc.resetPosition() # Random initial position
@@ -131,7 +136,7 @@ def generateData(i):
             
             #print("---------------------")
             #print("t = %.3f" % sc.t, "s")
-            
+            #print(sc.robots[2].xid0.y)
             if sc.t > 1:
                 maxAbsError = sc.getMaxFormationError()
                 if maxAbsError < 0.01 and errorCheckerEnabled:
