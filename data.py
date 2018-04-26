@@ -87,8 +87,9 @@ class Data():
                 elif psi < -math.pi:
                     psi += 2 * math.pi
                 dpbar = (peer.scene.xid.dpbarx**2 + peer.scene.xid.dpbary**2)**0.5
-                state = np.array([[dpbar, psi,
-                                   peer.xi.x, peer.xi.y, peer.xi.theta]])
+#                state = np.array([[dpbar, psi,
+#                                   peer.xi.x, peer.xi.y, peer.xi.theta]])
+                state = np.array([[dpbar, psi]])
             ret = (obs0, state)
         
         return ret
