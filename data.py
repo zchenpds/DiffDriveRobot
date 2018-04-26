@@ -82,6 +82,10 @@ class Data():
             elif mode == -12: # Peer's state
                 peer = self.robot
                 psi = peer.xid.theta - peer.xi.theta
+                if psi > math.pi:
+                    psi -= 2 * math.pi
+                elif psi < -math.pi:
+                    psi += 2 * math.pi
                 dpbar = (peer.scene.xid.dpbarx**2 + peer.scene.xid.dpbary**2)**0.5
                 state = np.array([[dpbar, psi,
                                    peer.xi.x, peer.xi.y, peer.xi.theta]])
@@ -145,6 +149,10 @@ class Data():
         elif self.robot.scene.dynamics == 16 or self.robot.scene.dynamics == 17:
             peer = self.robot
             psi = peer.xid.theta - peer.xi.theta
+            if psi > math.pi:
+                psi -= 2 * math.pi
+            elif psi < -math.pi:
+                psi += 2 * math.pi
             dpbar = (peer.scene.xid.dpbarx**2 + peer.scene.xid.dpbary**2)**0.5
             obs2Data = [[dpbar, psi,
                          peer.xi.x, peer.xi.y, peer.xi.theta]] # mode = -12
