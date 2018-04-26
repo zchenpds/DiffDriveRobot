@@ -55,11 +55,12 @@ def initRef(sc, i):
 def plot(sp, tf):
     #sp.plot(0, tf)
     sp.plot(2, tf) # Formation Separation
-    sp.plot(21, tf) # Formation Orientation
-    if sp.sc.dynamics == 16 or sp.sc.dynamics == 17:
-        sp.plot(23, tf)
-    else:
-        sp.plot(22, tf)
+    if sp.sc.dynamics == 14:
+        sp.plot(21, tf) # Formation Orientation
+    if sp.sc.dynamics == 16:
+        sp.plot(23, tf) # distance from goal
+    elif sp.sc.dynamics == 14:
+        sp.plot(22, tf) # distances from goals
     sp.plot(4, tf)
     #sp.plot(5, tf)
     sp.plot(6, tf)
@@ -74,8 +75,8 @@ def generateData(i):
     sc.errorType = 0
     try:
         sc.addRobot(np.float32([[-2, 0, 0], [0.0, 0.0, 0.0]]), role = sc.ROLE_PEER)
-        sc.addRobot(np.float32([[1, 3, 0], [-2.0/2, 0.0, 0.0]]), role = sc.ROLE_PEER)
-        sc.addRobot(np.float32([[2, 3, 0], [-1.0/2, 1.732/2, 0.0]]), role = sc.ROLE_PEER)
+        sc.addRobot(np.float32([[1, 3, 0], [-2.0/4*3, 0.0, 0.0]]), role = sc.ROLE_PEER)
+        sc.addRobot(np.float32([[2, 3, 0], [-1.0/4*3, 1.732/4*3, 0.0]]), role = sc.ROLE_PEER)
 #==============================================================================
 #         sc.addRobot(np.float32([[1, 3, 0], [0, -1, 0]]), 
 #                     dynamics = sc.DYNAMICS_LEARNED, 
@@ -174,7 +175,7 @@ def generateData(i):
 
 # main
 import saver
-numRun = 4
+numRun = 70
 dataList = []
 
 

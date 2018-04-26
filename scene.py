@@ -372,7 +372,7 @@ class Scene():
             # self.xid.vRefAng
             self.xid.dpbarx = -self.xid.vRefMag * math.cos(self.xid.vRefAng)
             self.xid.dpbary = -self.xid.vRefMag * math.sin(self.xid.vRefAng)
-            print('dpbarx: ', self.xid.dpbarx, ', dpbary: ', self.xid.dpbary)
+            #print('dpbarx: ', self.xid.dpbarx, ', dpbary: ', self.xid.dpbary)
         
     def simulate(self):
         # vrep related
