@@ -99,7 +99,7 @@ class ScenePlot():
         elif type == 2: # Formation Error type 2
             if not self.sc.ploted[type]:
                 k = 0
-                for i in range(1, len(self.sc.robots)):
+                for i in range(0, len(self.sc.robots)):
                     xi = self.sc.robots[i].xi.x
                     yi = self.sc.robots[i].xi.y
                     xid = self.sc.robots[i].xid.x
@@ -108,9 +108,11 @@ class ScenePlot():
                     if self.sc.dynamics == 13:
                         j2 = 1
                     elif self.sc.dynamics == 14 or self.sc.dynamics == 16 or self.sc.dynamics == 17:
-                        j2 = i
+                        j2 = len(self.sc.robots)
                     for j in range(0, j2):
                         if self.sc.adjMatrix[i, j] == 0:
+                            continue
+                        if i > j and self.sc.adjMatrix[j, i] != 0:
                             continue
                         xj = self.sc.robots[j].xi.x
                         yj = self.sc.robots[j].xi.y
@@ -291,7 +293,7 @@ class ScenePlot():
                         
                 # print('time: ', (self.sc.t + 1e-5) % 1)
                 if (self.sc.t + 1e-5) % 3 < 2e-5:
-                    print("recording")
+                    # print("recording")
                     self.sc.tss.append(self.sc.t)
                     for i in range(len(self.sc.robots)):
                         x = self.sc.robots[i].xi.x
@@ -323,27 +325,27 @@ class ScenePlot():
                              self.sc.ydict2[type][i][:, 1], 
                              '-', color = c, label = str(i))
                     curves.append(curve)
-                    for j in range(len(self.sc.tss)):
-                        plt.plot(self.sc.ydict[type][i][j, 0], 
-                                 self.sc.ydict[type][i][j, 1], 
-                                 marker=(3, 0, self.sc.ydict[type][i][j, 2]),
+                    for k in range(len(self.sc.tss)):
+                        plt.plot(self.sc.ydict[type][i][k, 0], 
+                                 self.sc.ydict[type][i][k, 1], 
+                                 marker=(3, 0, self.sc.ydict[type][i][k, 2]),
                                  markersize=20, linestyle='None',
                                  color=c, fillstyle="none")
                 if int(matplotlib.__version__[0]) == 2:
                     plt.legend(handles = curves)
                 l = len(self.sc.robots)
                 for i in range(len(self.sc.robots)):
-                    for j in range(len(self.sc.tss)):
-                        x1 = self.sc.ydict[type][i][j, 0]
-                        y1 = self.sc.ydict[type][i][j, 1]
-                        x2 = self.sc.ydict[type][(i+1)%l][j, 0]
-                        y2 = self.sc.ydict[type][(i+1)%l][j, 1]
+                    for k in range(len(self.sc.tss)):
+                        x1 = self.sc.ydict[type][i][k, 0]
+                        y1 = self.sc.ydict[type][i][k, 1]
+                        x2 = self.sc.ydict[type][(i+1)%l][k, 0]
+                        y2 = self.sc.ydict[type][(i+1)%l][k, 1]
                         plt.plot([x1, x2], [y1, y2], ':', color = (0, 0, 0))
                         
                 # Plot center trajectory
-                for j in range(len(self.sc.tss)):
-                    plt.plot(self.sc.centerTrajS[j, 0], 
-                             self.sc.centerTrajS[j, 1],
+                for k in range(len(self.sc.tss)):
+                    plt.plot(self.sc.centerTrajS[k, 0], 
+                             self.sc.centerTrajS[k, 1],
                              'o',
                              markersize=10, linestyle='None',
                              color = (0, 0, 0))
