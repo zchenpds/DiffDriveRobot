@@ -333,14 +333,20 @@ class ScenePlot():
                                  color=c, fillstyle="none")
                 if int(matplotlib.__version__[0]) == 2:
                     plt.legend(handles = curves)
-                l = len(self.sc.robots)
-                for i in range(len(self.sc.robots)):
-                    for k in range(len(self.sc.tss)):
+                for k in range(len(self.sc.tss)):
+                    for i in range(len(self.sc.robots)):
                         x1 = self.sc.ydict[type][i][k, 0]
                         y1 = self.sc.ydict[type][i][k, 1]
-                        x2 = self.sc.ydict[type][(i+1)%l][k, 0]
-                        y2 = self.sc.ydict[type][(i+1)%l][k, 1]
-                        plt.plot([x1, x2], [y1, y2], ':', color = (0, 0, 0))
+                        for j in range(0, len(self.sc.robots)):
+                            if self.sc.adjMatrix[i, j] == 0:
+                                continue
+                            if i > j and self.sc.adjMatrix[j, i] != 0:
+                                continue
+                            x2 = self.sc.ydict[type][j][k, 0]
+                            y2 = self.sc.ydict[type][j][k, 1]
+                            plt.plot([x1, x2], [y1, y2], ':', color = (0, 0, 0))
+                        
+                        
                         
                 # Plot center trajectory
                 for k in range(len(self.sc.tss)):
