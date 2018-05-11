@@ -113,8 +113,10 @@ class ScenePlot():
                         yjd = self.sc.robots[j].xid.y
                         
                         eji = np.array([xi - xj, yi - yj])
-                        #ejid = np.array([xid - xjd, yid - yjd])
-                        ejid = self.sc.alpha
+                        if self.sc.dynamics == 17:
+                            ejid = np.array([xid - xjd, yid - yjd])
+                        else:
+                            ejid = self.sc.alpha
                         error = np.linalg.norm(eji) - np.linalg.norm(ejid)
                         
                         # If this is the first time this type of plot is drawn

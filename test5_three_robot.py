@@ -94,7 +94,7 @@ def generateData(i):
         # Set robot 0 as the leader.
         
         # vrep related
-        sc.initVrep()
+        #sc.initVrep()
         # Choose sensor type
         #sc.SENSOR_TYPE = "VPL16" # None, 2d, VPL16, kinect
         sc.SENSOR_TYPE = "VPL16" # None, 2d, VPL16, kinect
@@ -123,7 +123,7 @@ def generateData(i):
             sc.setVrepHandles(2, '#1')
         
         #sc.renderScene(waitTime = 3000)
-        tf = 1.5 # must be greater than 1
+        tf = 11 # must be greater than 1
         errorCheckerEnabled = False
         initRef(sc, i)
         sc.resetPosition(2) # Random initial position
@@ -181,7 +181,7 @@ def generateData(i):
 
 # main
 import saver
-numRun = 2
+numRun = 250
 dataList = []
 
 
