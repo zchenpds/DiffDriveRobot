@@ -18,6 +18,8 @@ import random
 
 #fcl = DeepFCL(50, 50, 2, 1)
 
+robotNum = 4
+
 def initRef(sc, i):
     if sc.dynamics == sc.DYNAMICS_MODEL_BASED_LINEAR:
         #radiusLeaderList = [2.0, 3.0, 4.0]
@@ -44,7 +46,7 @@ def initRef(sc, i):
     elif (sc.dynamics == sc.DYNAMICS_MODEL_BASED_DISTANCE_REFVEL or 
           sc.dynamics == sc.DYNAMICS_MODEL_BASED_DISTANCE2_REFVEL):
         # set desired velocity vector
-        sc.xid.vRefMag = 0.5
+        sc.xid.vRefMag = 0.7
         sc.xid.vRefAng = 2 * math.pi * random.random()
         sc.xid.theta = 0
         sc.xid.sDot = 0
@@ -81,10 +83,8 @@ def generateData(i):
     sc.dynamics = sc.DYNAMICS_MODEL_BASED_DISTANCE2_REFVEL # robot dynamics
     sc.errorType = 0
     try:
-        sc.addRobot(np.float32([[-2, 0, 1], [0.0, 0.0, 0.0]]), role = sc.ROLE_PEER)
-        sc.addRobot(np.float32([[1, 3, -1], [-1.0, 0.0, 0.0]]), role = sc.ROLE_PEER)
-        sc.addRobot(np.float32([[2, 3, 0], [-1.0/2, 1.732/2, 0.0]]), role = sc.ROLE_PEER)
-        sc.addRobot(np.float32([[1, 2, 0], [1.0/2, 1.732/2, 0.0]]), role = sc.ROLE_PEER)
+        for i in range(robotNum):
+            sc.addRobot(np.float32([[-2, 0, 1], [0.0, 0.0, 0.0]]), role = sc.ROLE_PEER)
 #==============================================================================
 #         sc.addRobot(np.float32([[1, 3, 0], [0, -1, 0]]), 
 #                     dynamics = sc.DYNAMICS_LEARNED, 
@@ -92,15 +92,14 @@ def generateData(i):
 #==============================================================================
         
         # No leader
-        sc.setADjMatrix(np.uint8([[0, 1, 1, 1], 
-                                  [1, 0, 1, 1], 
-                                  [1, 1, 0, 1],
-                                  [1, 1, 1, 0]]))
+        I = np.identity(robotNum, dtype=np.int8)
+        M = np.ones(robotNum, dtype=np.int8)
+        sc.setADjMatrix(M-I)
         
         # Set robot 0 as the leader.
         
         # vrep related
-        #sc.initVrep()
+        sc.initVrep()
         # Choose sensor type
         #sc.SENSOR_TYPE = "VPL16" # None, 2d, VPL16, kinect
         sc.SENSOR_TYPE = "None" # None, 2d, VPL16, kinect
@@ -122,13 +121,13 @@ def generateData(i):
         tf = 15 # must be greater than 1
         errorCheckerEnabled = False
         initRef(sc, i)
-        sc.resetPosition(2) # Random initial position
+        sc.resetPosition(4) # Random initial position
         # Fixed initial position
         #sc.robots[0].setPosition([0.0, 0.0, math.pi/2]) 
         #sc.robots[1].setPosition([-2.2, -1.0, 0.3])
         sp.plot(4, tf)
         while sc.simulate():
-            sc.renderScene(waitTime = int(sc.dt * 1000/2))
+            #sc.renderScene(waitTime = int(sc.dt * 1000/2))
             #sc.showOccupancyMap(waitTime = int(sc.dt * 1000))
             
             #print("---------------------")
@@ -177,7 +176,7 @@ def generateData(i):
 
 # main
 import saver
-numRun = 10
+numRun = 4
 dataList = []
 
 

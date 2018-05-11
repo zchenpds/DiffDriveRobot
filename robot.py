@@ -11,6 +11,7 @@ try:
 except ImportError:
     USE_CV2 = False
 
+import operator
 import math
 from state import State
 import numpy as np
@@ -198,15 +199,15 @@ class Robot():
             self.xid.vxp = self.xid.vx - c * math.sin(self.xid.theta) * thetaDot
             self.xid.vyp = self.xid.vy + c * math.cos(self.xid.theta) * thetaDot
             self.xid.vRef = self.scene.xid.vRef
-        elif self.dynamics == 17:
+        elif self.dynamics == 17 or self.dynamics == 18:
             self.xid.theta = self.scene.xid.vRefAng
 			
 			
     def precompute(self):
-        self.updateNeighbors()
         if self.dynamics >= 10:
             self.xi.transform()
             self.xid.transform()
+        self.updateNeighbors()
         
     def propagate(self):
         if self.scene.vrepConnected == False:
@@ -287,7 +288,6 @@ class Robot():
             
             tauix = 0
             tauiy = 0
-            self.updateNeighbors()
             for robot in self.neighbors:
                 vxp += -K4 * ((self.xi.xp - robot.xi.xp) - (self.xid.xp - robot.xid.xp))
                 vyp += -K4 * ((self.xi.yp - robot.xi.yp) - (self.xid.yp - robot.xid.yp))
@@ -335,7 +335,7 @@ class Robot():
  
             #print(v1,v2,'model')
         
-        elif self.dynamics >= 15 and self.dynamics <= 17:
+        elif self.dynamics >= 15 and self.dynamics <= 18:
             # For e-puk dynamics
             # Feedback linearization
             # v1: left wheel speed
@@ -356,23 +356,41 @@ class Robot():
                 dxypMax = 0.7
             
             
+            # sort neighbors by distance
+            if True: #not hasattr(self, 'dictDistance'):
+                self.dictDistance = dict()
+                for j in range(len(self.scene.robots)):
+                    if self.scene.adjMatrix[self.index, j] == 0:
+                        continue
+                    robot = self.scene.robots[j] # neighbor
+                    self.dictDistance[j] = self.xi.distancepTo(robot.xi)
+                self.listSortedDistance = sorted(self.dictDistance.items(), 
+                                        key=operator.itemgetter(1))
+            
             # velocity in transformed space
             vxp = 0
             vyp = 0
             
             tauix = 0
             tauiy = 0
-            self.updateNeighbors()
-            for robot in self.neighbors:
-                pijx = self.xi.xp - robot.xi.xp 
-                pijy = self.xi.yp - robot.xi.yp 
-                pij0 = (pijx**2 + pijy**2)**0.5 # the norm of pij
-                pijdx = self.xid.xp - robot.xid.xp
-                pijdy = self.xid.yp - robot.xid.yp
-                pijd0 = (pijdx**2 + pijdy**2)**0.5 # the norm of pijd
-                
+            # neighbors sorted by distances in descending order
+            lsd = self.listSortedDistance
+            jList = [lsd[0][0], lsd[1][0]]
+            m = 2
+            while m < len(lsd) and lsd[m][1] < 1.414 * lsd[1][1]:
+                jList.append(lsd[m][0])
+                m += 1
+            #print(self.listSortedDistance)
+            for j in jList: 
+                robot = self.scene.robots[j]
+                pijx = self.xi.xp - robot.xi.xp
+                pijy = self.xi.yp - robot.xi.yp
+                pij0 = self.xi.distancepTo(robot.xi)
+                if self.dynamics == 18:
+                    pijd0 = self.scene.alpha
+                else:
+                    pijd0 = self.xid.distancepTo(robot.xid)
                 tauij0 = 2 * (pij0**4 - pijd0**4) / pij0**3
-                
                 tauix += tauij0 * pijx / pij0
                 tauiy += tauij0 * pijy / pij0
             
@@ -382,11 +400,11 @@ class Robot():
             vyp += -K3 * tauiy
             
             # Velocity control toward goal
-            dCosTheta = math.cos(self.xi.theta) - math.cos(self.xid.theta)
+            #dCosTheta = math.cos(self.xi.theta) - math.cos(self.xid.theta)
             #print("dCosTheta: ", dCosTheta)
             #print("theta: ", self.xi.theta, "thetad: ", self.xid.theta)
-            dxp = self.scene.xid.dpbarx + self.l / 2 * dCosTheta
-            dyp = self.scene.xid.dpbary + self.l / 2 * dCosTheta
+            dxp = self.scene.xid.dpbarx #+ self.l / 2 * dCosTheta
+            dyp = self.scene.xid.dpbary #+ self.l / 2 * dCosTheta
             # Velocity control toward goal
             #dxp = self.xi.xp - self.xid.xp
             #dyp = self.xi.yp - self.xid.yp
@@ -536,7 +554,8 @@ class Robot():
     def draw(self, image, drawType):
         if drawType == 1:
             xi = self.xi
-            color = (0, 0, 255)
+            #color = (0, 0, 255)
+            color = self.scene.getRobotColor(self.index, 255, True)
         elif drawType == 2:
             xi = self.xid
             color = (0, 255, 0)

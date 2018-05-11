@@ -13,8 +13,8 @@ class Data():
     def __init__(self, robot):
         self.mode = -12
         self.q = queue.Queue()
-        
         self.robot = robot
+        dynamics = self.robot.scene.dynamics
         pc = self.robot.pointCloud
         self.d = dict() # Will become None after the scene is saved
         self.d['epi_starts'] = np.array([], dtype = np.bool)
@@ -24,16 +24,18 @@ class Data():
             self.d['observations'] = np.zeros((0, pc.hPix * pc.wPix * 2), dtype = np.int8)
             self.d['observations2'] = np.zeros((0, 2), dtype = np.float32)
         self.d['observations1'] = np.zeros((0, pc.lenScanVector), dtype = np.float32)
-        if self.robot.scene.dynamics == 13:
+        if dynamics == 13:
             self.d['obs2'] = np.zeros((0, 17), dtype = np.float32)
-        elif self.robot.scene.dynamics == 14:
+        elif dynamics == 14:
             self.d['obs2'] = np.zeros((0, 10), dtype = np.float32)
-        elif self.robot.scene.dynamics == 16:
+        elif dynamics == 16:
             self.d['obs2'] = np.zeros((0, 2), dtype = np.float32)
-        elif self.robot.scene.dynamics == 17:
+        elif dynamics == 17:
+            self.d['obs2'] = np.zeros((0, 8), dtype = np.float32)
+        elif dynamics == 18:
             self.d['obs2'] = np.zeros((0, 6), dtype = np.float32)
         else:
-            raise Exception("Undefined robot dynamics for data recording", self.robot.dynamics)
+            raise Exception("Undefined robot dynamics for data recording", dynamics)
         self.d['actions'] = np.zeros((0, 2), dtype = np.float32)
     def getObservation(self, mode):
         # This function can not run after scene has been saved as a pickle file
@@ -87,9 +89,12 @@ class Data():
                 elif psi < -math.pi:
                     psi += 2 * math.pi
                 dpbar = (peer.scene.xid.dpbarx**2 + peer.scene.xid.dpbary**2)**0.5
+                dstars = []
+                for neighbor in self.robot.neighbors:
+                    dstars.append(peer.xid.distancepTo(neighbor.xid))
 #                state = np.array([[dpbar, psi,
 #                                   peer.xi.x, peer.xi.y, peer.xi.theta]])
-                state = np.array([[dpbar, psi, peer.scene.alpha]])
+                state = np.array([[dpbar, psi, peer.scene.alpha] + dstars])
             ret = (obs0, state)
         
         return ret
@@ -155,8 +160,13 @@ class Data():
             elif psi < -math.pi:
                 psi += 2 * math.pi
             dpbar = (peer.scene.xid.dpbarx**2 + peer.scene.xid.dpbary**2)**0.5
+            dstars = []
+            for neighbor in self.robot.neighbors:
+                dstars.append(peer.xid.distancepTo(neighbor.xid))
+            #print(dstars)
             obs2Data = [[dpbar, psi, peer.scene.alpha,
-                         peer.xi.x, peer.xi.y, peer.xi.theta]] # mode = -12
+                         peer.xi.x, peer.xi.y, peer.xi.theta] 
+                        + dstars] # mode = -12
             #print("Robot", self.robot.index, ", psi: ", psi)
         self.d['obs2'] = np.append(self.d['obs2'], obs2Data, axis = 0)
         self.d['actions'] = np.append(self.d['actions'], 

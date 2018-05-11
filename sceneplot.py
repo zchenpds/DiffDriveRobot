@@ -18,6 +18,7 @@ class ScenePlot():
         self.TYPE_TIME_SEPARATION_ERROR = 2
         self.TYPE_TIME_BEARING_ERROR = 3
         self.TYPE_TIME_ACTIONS = 6
+        self.getRobotColor = self.sc.getRobotColor
         
         self.saveEnabled = saveEnabled
         if self.saveEnabled == True:
@@ -37,19 +38,7 @@ class ScenePlot():
             os.makedirs(self.directory)
             
             
-    def getRobotColor(self, i):
-        brightness = 0.7
-        if i == 0:
-            c = (brightness, 0, 0)
-        elif i == 1:
-            c = (0, brightness, 0)
-        elif i == 2:
-            c = (0, 0, brightness)
-        elif i == 3:
-            c = (0, brightness, brightness)
-        else:
-            c = (0, 0, 0)
-        return c
+    
         
     def plot(self, type = 0, tf = 0):
         # type 0: (t, x_i - x_id)
@@ -106,10 +95,14 @@ class ScenePlot():
                     yid = self.sc.robots[i].xid.y
                     
                     if self.sc.dynamics == 13:
-                        j2 = 1
-                    elif self.sc.dynamics == 14 or self.sc.dynamics == 16 or self.sc.dynamics == 17:
-                        j2 = len(self.sc.robots)
-                    for j in range(0, j2):
+                        jList = range(0, 1)
+                    elif self.sc.dynamics == 14 or (self.sc.dynamics >= 16 and self.sc.dynamics <= 17):
+                        jList = range(0, len(self.sc.robots))
+                    elif self.sc.dynamics == 18:
+                        #lsd = self.sc.robots[i].listSortedDistance
+                        #jList = [lsd[0][0],lsd[1][0]]
+                        jList = range(0, len(self.sc.robots))
+                    for j in jList:
                         if self.sc.adjMatrix[i, j] == 0:
                             continue
                         if i > j and self.sc.adjMatrix[j, i] != 0:
@@ -120,8 +113,8 @@ class ScenePlot():
                         yjd = self.sc.robots[j].xid.y
                         
                         eji = np.array([xi - xj, yi - yj])
-                        ejid = np.array([xid - xjd, yid - yjd])
-                        
+                        #ejid = np.array([xid - xjd, yid - yjd])
+                        ejid = self.sc.alpha
                         error = np.linalg.norm(eji) - np.linalg.norm(ejid)
                         
                         # If this is the first time this type of plot is drawn
@@ -397,7 +390,7 @@ class ScenePlot():
             # Show action
             if self.sc.dynamics == 13:
                 j1 = 1
-            elif self.sc.dynamics == 14 or self.sc.dynamics == 16 or self.sc.dynamics == 17:
+            elif self.sc.dynamics == 14 or (self.sc.dynamics >= 16 and self.sc.dynamics <= 18):
                 j1 = 0
             if not self.sc.ploted[type]:
                 for i in range(len(self.sc.robots)):

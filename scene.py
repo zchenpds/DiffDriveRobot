@@ -68,6 +68,7 @@ class Scene():
         self.DYNAMICS_MODEL_BASED_LINEAR_GOAL = 14
         self.DYNAMICS_MODEL_BASED_DISTANCE_GOAL = 16
         self.DYNAMICS_MODEL_BASED_DISTANCE_REFVEL = 17
+        self.DYNAMICS_MODEL_BASED_DISTANCE2_REFVEL = 18
         self.DYNAMICS_LEARNED = 30
         
         # follower does not have knowledge of absolute position
@@ -209,15 +210,14 @@ class Scene():
         #self.robots[robotIndex].setPosition()
         self.robots[robotIndex].readSensorData()
         
-    def resetPosition(self):
-        boundaryFactor = 0.7
+    def resetPosition(self, radius = 2):
         MIN_DISTANCE = 1
         if self.robots[0].dynamics == 11:
             for i in range(0, len(self.robots)):
                 while True:
                     minDij = 100
                     alpha1 = 2 * math.pi * random.random()
-                    rho1 = boundaryFactor * self.xMax * random.random()
+                    rho1 = radius * random.random()
                     x1 = rho1 * math.cos(alpha1)
                     y1 = rho1 * math.sin(alpha1)
                     theta1 = 2 * math.pi * random.random()
@@ -240,7 +240,7 @@ class Scene():
                 while True:
                     minDij = 100
                     alpha1 = 2 * math.pi * random.random()
-                    rho1 = boundaryFactor * self.xMax * random.random()
+                    rho1 = radius * random.random()
                     x1 = rho1 * math.cos(alpha1)
                     y1 = rho1 * math.sin(alpha1)
                     theta1 = 2 * math.pi * random.random()
@@ -263,7 +263,7 @@ class Scene():
                 while True:
                     minDij = 100
                     alpha1 = math.pi * (1 + random.random())
-                    rho1 = boundaryFactor * 5 * random.random()
+                    rho1 = radius * random.random()
                     x1 = rho1 * math.cos(alpha1)
                     y1 = rho1 * math.sin(alpha1)
                     theta1 = 2 * math.pi * random.random()
@@ -285,7 +285,7 @@ class Scene():
                     minDij = float("inf")
                     #alpha1 = math.pi * (-2/3*i - 1/3* random.random()) # limited
                     alpha1 = math.pi * (2 * random.random()) # arbitrary
-                    rho1 = 4 + 2 * random.random()
+                    rho1 = radius * random.random()
                     x1 = rho1 * math.cos(alpha1)
                     y1 = rho1 * math.sin(alpha1)
                     theta1 = 2 * math.pi * random.random()
@@ -300,7 +300,7 @@ class Scene():
                     if minDij >= MIN_DISTANCE:
                         self.robots[i].setPosition([x1, y1, theta1])
                         break # i++
-        elif self.dynamics == 16 or self.dynamics == 17:
+        elif self.dynamics >= 16 and self.dynamics <= 18:
             xbar = 0
             ybar = 0
             for i in range(0, len(self.robots)):
@@ -308,7 +308,7 @@ class Scene():
                     minDij = float("inf")
                     #alpha1 = math.pi * (-2/3*i - 1/3* random.random()) # limited
                     alpha1 = math.pi * (2 * random.random()) # arbitrary
-                    rho1 = 3 + 2 * random.random()
+                    rho1 = radius * random.random()
                     x1 = rho1 * math.cos(alpha1)
                     y1 = rho1 * math.sin(alpha1)
                     theta1 = 2 * math.pi * random.random()
@@ -375,11 +375,12 @@ class Scene():
             self.xid.dpbarx = self.xi.x - self.xid.x
             self.xid.dpbary = self.xi.y - self.xid.y
             #print('dpbarx: ', self.xid.dpbarx, ', dpbary: ', self.xid.dpbary)
-        elif self.dynamics == 17:
+        elif self.dynamics == 17 or self.dynamics == 18:
             # self.xid.vRefMag
             # self.xid.vRefAng
-            self.xid.dpbarx = -self.xid.vRefMag * math.cos(self.xid.vRefAng)
-            self.xid.dpbary = -self.xid.vRefMag * math.sin(self.xid.vRefAng)
+            omega = 0
+            self.xid.dpbarx = -self.xid.vRefMag * math.cos(self.xid.vRefAng + self.t * omega)
+            self.xid.dpbary = -self.xid.vRefMag * math.sin(self.xid.vRefAng + self.t * omega)
             #print('dpbarx: ', self.xid.dpbarx, ', dpbary: ', self.xid.dpbary)
         
     def simulate(self):
@@ -432,12 +433,30 @@ class Scene():
     def renderScene(self, timestep = -1, waitTime = 25):
         if USE_CV2 == False:
             return
+        self.image = np.zeros((self.hPix, self.wPix, 3), np.uint8)
         for robot in self.robots:
             robot.draw(self.image, 1)
-            robot.draw(self.image, 2)
+            #robot.draw(self.image, 2)
         cv2.imshow('scene', self.image)
         cv2.waitKey(waitTime)
+    
+    def getRobotColor(self, i, brightness = 0.7, reverse = False):
         
+        if i == 0:
+            c = (brightness, 0, 0)
+        elif i == 1:
+            c = (0, brightness, 0)
+        elif i == 2:
+            c = (0, 0, brightness)
+        elif i == 3:
+            c = (0, brightness, brightness)
+        else:
+            c = (brightness, 0, brightness)
+        if reverse == True:
+            return c[::-1]
+        else:
+            return c
+    
     def showOccupancyMap(self, waitTime = 25):
         if USE_CV2 == False:
             return

@@ -39,7 +39,10 @@ class State():
         self.yp = self.y + c * math.sin(self.theta)
         self.thetap = self.theta
         
-        
+    def distancepTo(self, other):
+        dxp = self.xp - other.xp
+        dyp = self.yp - other.yp
+        return (dxp**2 + dyp**2)**0.5
         
         
         
