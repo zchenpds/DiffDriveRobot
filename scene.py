@@ -40,10 +40,14 @@ class Scene():
         # For visualization
         self.wPix = 600
         self.hPix = 600
-        self.xMax = 15
-        self.yMax = 15
+        self.xMax = 8
+        self.yMax = 8
         self.image = np.zeros((self.hPix, self.wPix, 3), np.uint8)
-        
+        if USE_CV2:
+            self.fourcc = cv2.VideoWriter_fourcc(*'XVID')
+            self.out = cv2.VideoWriter('output.avi', self.fourcc, 20.0, (self.wPix, self.hPix))
+            self.frameCounter = 0
+            
         self.robots = []
         self.adjMatrix = None
         self.Laplacian = None
@@ -381,15 +385,21 @@ class Scene():
             #print(self.centerTraj)
         self.centerTraj[-1, :] /= len(self.robots)
          
-    def renderScene(self, timestep = -1, waitTime = 25):
+    def renderScene(self, timestep = -1, waitTime = 25, mode = 0):
         if USE_CV2 == False:
             return
         self.image = np.zeros((self.hPix, self.wPix, 3), np.uint8)
         for robot in self.robots:
             robot.draw(self.image, 1)
             #robot.draw(self.image, 2)
-        cv2.imshow('scene', self.image)
-        cv2.waitKey(waitTime)
+        if mode == 0:
+            cv2.imshow('scene', self.image)
+            cv2.waitKey(waitTime)
+        elif mode == 1:
+            if self.frameCounter % 5 == 0:
+                self.out.write(self.image)
+            self.frameCounter += 1
+            
     
     def getRobotColor(self, i, brightness = 0.7, reverse = False):
         
@@ -482,7 +492,7 @@ class Scene():
         self.log("Scene is destructed")
         if USE_CV2 == True:
             cv2.destroyAllWindows() # Add this to fix the window freezing bug
-        
+            self.out.release()
         # vrep related
         if self.vrepConnected:
             self.vrepConnected = False

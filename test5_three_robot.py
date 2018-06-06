@@ -132,13 +132,13 @@ def generateData(i):
         initRef(sc, i)
         #sc.resetPosition(2) # Random initial position
         
-        sc.robots[0].setPosition([.0, .0, .0])
-        sc.robots[1].setPosition([-2.0, 0.001, 0.0])
-        sc.robots[2].setPosition([2.0, 0.0, 0.0])
-        
         #sc.robots[0].setPosition([.0, .0, .0])
-        #sc.robots[1].setPosition([-3.0, 4.0, 0.0])
-        #sc.robots[2].setPosition([2.0, 1.0, 0.0])
+        #sc.robots[1].setPosition([-2.0, 0.001, 0.0])
+        #sc.robots[2].setPosition([2.0, 0.0, 0.0])
+        
+        sc.robots[0].setPosition([.0, .0, .0])
+        sc.robots[1].setPosition([-3.0, 4.0, 0.0])
+        sc.robots[2].setPosition([2.0, 1.0, 0.0])
         
         # Fixed initial position
         #sc.robots[0].setPosition([0.0, 0.0, math.pi/2]) 
@@ -146,7 +146,7 @@ def generateData(i):
         sp.plot(4, tf)
         while sc.simulate():
             #sc.renderScene(waitTime = int(sc.dt * 1000))
-            sc.showOccupancyMap(waitTime = int(sc.dt * 1000))
+            #sc.showOccupancyMap(waitTime = int(sc.dt * 1000))
             
             #print("---------------------")
             #print("t = %.3f" % sc.t, "s")

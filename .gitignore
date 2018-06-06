@@ -12,3 +12,4 @@ vrepConst.py
 /models
 *.npz
 *.bak
+*.avi

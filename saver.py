@@ -25,6 +25,8 @@ def save(sc):
         robot.data.q = None
         if robot.learnedController is not None:
             robot.learnedController = None
+    if sc.out is not None:
+        sc.out = None
     path = os.path.join(directory, 'sc'+str(count).zfill(3)+'.pkl')
     with open(path, 'wb') as f:
         pickle.dump(sc, f)

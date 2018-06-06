@@ -21,7 +21,8 @@ import random
 def initRef(sc, i):
     message = ""
     if sc.dynamics == 5:
-        pass#sc.xid.vRef = 0.7
+        sc.xid.vxp = 0#.2
+        sc.xid.vyp = 0#.3
     elif sc.dynamics == sc.DYNAMICS_MODEL_BASED_DISTANCE_GOAL:
         g = 4.0 
         goalList = [[g, g], [-g, g], [g, -g], [-g, -g]]
@@ -92,12 +93,20 @@ def generateData(i):
         errorCheckerEnabled = False
         initRef(sc, i)
         #sc.resetPosition(2) # Random initial position
+        sc.robots[0].setPosition([.0, .0, .0])
+        sc.robots[1].setPosition([-2.0, 0.001, 0.0])
+        sc.robots[2].setPosition([2.0, 0.0, 0.0])
+        
+        #sc.robots[0].setPosition([.0, .0, .0])
+        #sc.robots[1].setPosition([-3.0, 4.0, 0.0])
+        #sc.robots[2].setPosition([2.0, 1.0, 0.0])
+        
         # Fixed initial position
         #sc.robots[0].setPosition([0.0, 0.0, math.pi/2]) 
         #sc.robots[1].setPosition([-2.2, -1.0, 0.3])
         sp.plot(4, tf)
         while sc.simulate():
-            #sc.renderScene(waitTime = int(sc.dt * 1000))
+            sc.renderScene(waitTime = int(sc.dt * 1000), mode = 1)
             #sc.showOccupancyMap(waitTime = int(sc.dt * 1000))
             
             #print("---------------------")

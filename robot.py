@@ -187,8 +187,11 @@ class Robot():
             K3 = 0.15  # interaction between i and j
             
             # velocity in transformed space
-            vxp = 0.2
-            vyp = 0.3
+            #vxp = 0.2
+            #vyp = 0.3
+            
+            vxp = self.scene.xid.vxp
+            vyp = self.scene.xid.vyp
             
             tauix = 0
             tauiy = 0
