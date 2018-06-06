@@ -15,13 +15,13 @@ def saturate(dxp, dyp, dxypMax):
     return dxp, dyp
 
 K3 = -0.15
-step = 0.1
+step = 0.2
 pijd0 = 1
 
-X, Y = np.meshgrid(np.arange(0, 4, step), np.arange(0, 4, step))
+X, Y = np.meshgrid(np.arange(0, 5.2, step), np.arange(0, 4, step))
 # others = [[1, 1], [1, 2], [2.732, 1], [2.732, 2]]
 # others = [[1, 1], [1+1.732/2, 1.5], [2.732, 1]]
-others = [[1, 1], [2, 1]]
+others = [[2, 2], [3, 2]]
 U = 0
 V = 0
 for robot in others:
@@ -38,7 +38,8 @@ for robot in others:
 
 U, V = saturate(U * K3, V * K3, 0.7)
 plt.figure()
-plt.title('...')
+plt.title('Vector field')
 Q = plt.quiver(X, Y, U, V, units='width')
 qk = plt.quiverkey(Q, 0.9, 0.9, 2, r'$2 \frac{m}{s}$', labelpos='E',
                    coordinates='figure')
+plt.axes().set_aspect('equal', 'datalim')

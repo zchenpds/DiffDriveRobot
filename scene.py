@@ -62,6 +62,7 @@ class Scene():
         
         # CONSTANTS
         self.dynamics = 11
+        self.DYNAMICS_INTEGRATOR_MODEL = 5
         self.DYNAMICS_MODEL_BASED_CICULAR = 11
         self.DYNAMICS_MODEL_BASED_STABILIZER = 12
         self.DYNAMICS_MODEL_BASED_LINEAR = 13
@@ -211,75 +212,15 @@ class Scene():
         self.robots[robotIndex].readSensorData()
         
     def resetPosition(self, radius = 2):
-        MIN_DISTANCE = 1
-        if self.robots[0].dynamics == 11:
+        if radius is None:
             for i in range(0, len(self.robots)):
-                while True:
-                    minDij = 100
-                    alpha1 = 2 * math.pi * random.random()
-                    rho1 = radius * random.random()
-                    x1 = rho1 * math.cos(alpha1)
-                    y1 = rho1 * math.sin(alpha1)
-                    theta1 = 2 * math.pi * random.random()
-                    for j in range(0, i):
-                        dij = pow( pow(x1 - self.robots[j].xi.x, 2) + 
-                                   pow(y1 - self.robots[j].xi.y, 2), 0.5)
-                        # print('j = ', j, '( %.3f' % self.robots[j].xi.x, ', %.3f'%self.robots[j].xi.y, '), ', 'dij = ', dij)
-                        if dij < minDij:
-                            minDij = dij # find the smallest dij for all j
-                    print('Min distance: ', minDij, 'from robot #', i, 'to other robots.')
-                    
-                    # if the smallest dij is greater than allowed,
-                    if i==0 or minDij >= MIN_DISTANCE:
-                        self.robots[i].setPosition([x1, y1, theta1])
-                        break # i++
-                        
-        elif self.robots[0].dynamics == 12:
-            self.robots[0].setPosition([0.0, 1.0, 0.0])
-            for i in range(1, len(self.robots)):
-                while True:
-                    minDij = 100
-                    alpha1 = 2 * math.pi * random.random()
-                    rho1 = radius * random.random()
-                    x1 = rho1 * math.cos(alpha1)
-                    y1 = rho1 * math.sin(alpha1)
-                    theta1 = 2 * math.pi * random.random()
-                    for j in range(0, i):
-                        dij = pow( pow(x1 - self.robots[j].xi.x, 2) + 
-                                   pow(y1 - self.robots[j].xi.y, 2), 0.5)
-                        # print('j = ', j, '( %.3f' % self.robots[j].xi.x, ', %.3f'%self.robots[j].xi.y, '), ', 'dij = ', dij)
-                        if dij < minDij:
-                            minDij = dij # find the smallest dij for all j
-                    print('Min distance: ', minDij, 'from robot #', i, 'to other robots.')
-                    
-                    # if the smallest dij is greater than allowed,
-                    if minDij >= MIN_DISTANCE:
-                        self.robots[i].setPosition([x1, y1, theta1])
-                        break # i++
-                        
-        elif self.robots[0].dynamics == 13:
-            self.robots[0].setPosition([0.0, 0.0, math.pi/2])
-            for i in range(1, len(self.robots)):
-                while True:
-                    minDij = 100
-                    alpha1 = math.pi * (1 + random.random())
-                    rho1 = radius * random.random()
-                    x1 = rho1 * math.cos(alpha1)
-                    y1 = rho1 * math.sin(alpha1)
-                    theta1 = 2 * math.pi * random.random()
-                    for j in range(0, i):
-                        dij = ((x1 - self.robots[j].xi.x)**2 + 
-                               (y1 - self.robots[j].xi.y)**2)**0.5
-                        # print('j = ', j, '( %.3f' % self.robots[j].xi.x, ', %.3f'%self.robots[j].xi.y, '), ', 'dij = ', dij)
-                        if dij < minDij:
-                            minDij = dij # find the smallest dij for all j
-                    print('Min distance: ', minDij, 'from robot #', i, 'to other robots.')
-                    
-                    # if the smallest dij is greater than allowed,
-                    if minDij >= MIN_DISTANCE:
-                        self.robots[i].setPosition([x1, y1, theta1])
-                        break # i++
-        elif self.robots[0].dynamics == 14:
+                self.robots[i].setPosition(None)
+            return
+        
+        MIN_DISTANCE = 1
+        if self.dynamics == 5:
+            xbar = 0
+            ybar = 0
             for i in range(0, len(self.robots)):
                 while True:
                     minDij = float("inf")
@@ -288,7 +229,7 @@ class Scene():
                     rho1 = radius * random.random()
                     x1 = rho1 * math.cos(alpha1)
                     y1 = rho1 * math.sin(alpha1)
-                    theta1 = 2 * math.pi * random.random()
+                    theta1 = 0#2 * math.pi * random.random()
                     for j in range(0, i):
                         dij = ((x1 - self.robots[j].xi.x)**2 + 
                                (y1 - self.robots[j].xi.y)**2)**0.5
@@ -300,6 +241,12 @@ class Scene():
                     if minDij >= MIN_DISTANCE:
                         self.robots[i].setPosition([x1, y1, theta1])
                         break # i++
+                xbar += x1
+                ybar += y1
+            self.xi.x = xbar / len(self.robots)
+            self.xi.y = ybar / len(self.robots)
+            self.xid.dpbarx = self.xi.x - self.xid.x
+            self.xid.dpbary = self.xi.y - self.xid.y
         elif self.dynamics >= 16 and self.dynamics <= 18:
             xbar = 0
             ybar = 0
@@ -331,8 +278,12 @@ class Scene():
             self.xid.dpbary = self.xi.y - self.xid.y
             
         #input('One moment.')
-        # End of resetPosition()
-
+        # End of resetPosition()     
+        
+        
+        
+        
+        
     def scaleDesiredFormation(self, alpha):
         self.alpha = alpha
         for robot in self.robots:

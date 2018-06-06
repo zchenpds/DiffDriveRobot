@@ -69,7 +69,9 @@ class Robot():
         self.ctrl2_sm = []
         
     def propagateDesired(self):
-        if self.dynamics == 4 or self.dynamics == 11:
+        if self.dynamics == 5:
+            pass
+        elif self.dynamics == 4 or self.dynamics == 11:
             # Circular desired trajectory, depricated.
             t = self.scene.t
             radius = 2
@@ -90,81 +92,6 @@ class Robot():
             c = self.l/2
             self.xid.vxp = self.xid.vx - c * math.sin(self.xid.theta) * omega
             self.xid.vyp = self.xid.vy + c * math.cos(self.xid.theta) * omega
-        elif self.dynamics == 12:
-            # Fixed desired position
-            self.xid.x = self.xid0.x
-            self.xid.y = self.xid0.y
-            self.xid.vx = 0
-            self.xid.vy = 0
-            self.xid.theta = 0
-            #self.xid.omega = omega
-            
-            c = self.l/2
-            self.xid.vxp = 0
-            self.xid.vyp = 0
-            
-        elif self.dynamics == 13:
-            # Linear desired trajectory
-            t = self.scene.t
-            #dt = self.scene.dt
-            x = self.scene.xid.x
-            y = self.scene.xid.y
-            #print('x = ', x, 'y = ', y)
-            theta = self.scene.xid.theta
-            #print('theta = ', theta)
-            sDot = self.scene.xid.sDot
-            thetaDot = self.scene.xid.thetaDot
-            
-            phii = math.atan2(self.xid0.y, self.xid0.x)
-            rhoi = (self.xid0.x ** 2 + self.xid0.y ** 2) ** 0.5
-            #print('phii = ', phii)
-            self.xid.x = x + rhoi * math.cos(theta + phii)
-            self.xid.y = y + rhoi * math.sin(theta + phii)
-            self.xid.vx = sDot * math.cos(theta) - rhoi * thetaDot * math.sin(theta + phii)
-            self.xid.vy = sDot * math.sin(theta) + rhoi * thetaDot * math.cos(theta + phii)
-            #print('vx: ', self.xid.vx, 'vy:', self.xid.vy)
-            #print('v', self.index, ' = ', (self.xid.vx**2 + self.xid.vy**2)**0.5)
-            
-            if (self.xid.vx**2 + self.xid.vy**2)**0.5 > 1e-3:
-                self.xid.theta = math.atan2(self.xid.vy, self.xid.vx)
-            #self.xid.omega = omega
-            
-            c = self.l/2
-            self.xid.vxp = self.xid.vx - c * math.sin(self.xid.theta) * thetaDot
-            self.xid.vyp = self.xid.vy + c * math.cos(self.xid.theta) * thetaDot
-            
-        elif self.dynamics == 14:
-            # Linear desired trajectory
-            t = self.scene.t
-            #dt = self.scene.dt
-            x = self.scene.xid.x
-            y = self.scene.xid.y
-            #print('x = ', x, 'y = ', y)
-            theta = self.scene.xid.theta
-            #print('theta = ', theta)
-            sDot = self.scene.xid.sDot
-            thetaDot = self.scene.xid.thetaDot
-            
-            phii = math.atan2(self.xid0.y, self.xid0.x)
-            rhoi = (self.xid0.x ** 2 + self.xid0.y ** 2) ** 0.5
-            #print('phii = ', phii)
-            self.xid.x = x + rhoi * math.cos(phii)
-            self.xid.y = y + rhoi * math.sin(phii)
-            self.xid.vx = sDot * math.cos(theta)
-            self.xid.vy = sDot * math.sin(theta)
-            #print('vx: ', self.xid.vx, 'vy:', self.xid.vy)
-            #print('v', self.index, ' = ', (self.xid.vx**2 + self.xid.vy**2)**0.5)
-            if ((self.xid.x - self.xi.x)**2 + (self.xid.y - self.xi.y)**2)**0.5 > 1e-1:
-                self.xid.theta = math.atan2((self.xid.y - self.xi.y), 
-                                            (self.xid.x - self.xi.x))
-            #if (self.xid.vx**2 + self.xid.vy**2)**0.5 > 1e-3:
-            #    self.xid.theta = math.atan2(self.xid.vy, self.xid.vx)
-            #self.xid.omega = omega
-            
-            c = self.l/2
-            self.xid.vxp = self.xid.vx - c * math.sin(self.xid.theta) * thetaDot
-            self.xid.vyp = self.xid.vy + c * math.cos(self.xid.theta) * thetaDot
-            self.xid.vRef = self.scene.xid.vRef
         elif self.dynamics == 16:
             # Linear desired trajectory
             t = self.scene.t
@@ -204,9 +131,8 @@ class Robot():
 			
 			
     def precompute(self):
-        if self.dynamics >= 10:
-            self.xi.transform()
-            self.xid.transform()
+        self.xi.transform()
+        self.xid.transform()
         self.updateNeighbors()
         
     def propagate(self):
@@ -256,84 +182,31 @@ class Robot():
                 v2 = sum(self.ctrl2_sm[len(self.ctrl2_sm)-10:len(self.ctrl2_sm)]) / 10
                 
             #print(v1,v2,'dnn')
-        elif self.dynamics >= 11 and self.dynamics <= 14:
-            # For e-puk dynamics
-            # Feedback linearization
-            # v1: left wheel speed
-            # v2: right wheel speed
-            K4 = 1.0
-            K3 = 0.0 # Collision avoidance
-            dr = 1.2 # Collision avoidance
-            B = .2 # Collision avoidance
             
-            dxypMax = float('inf')
-            if self.role == self.scene.ROLE_LEADER: # I am a leader
-                K1 = 1
-                K2 = 1
-            elif self.role == self.scene.ROLE_FOLLOWER:
-                K1 = 0 # Reference position information is forbidden
-                K2 = 1
-            elif self.role == self.scene.ROLE_PEER:
-                K1 = 1
-                K2 = 0
-                K3 = 1.0 # Collision avoidance
-                K4 = 1.0
-                dxypMax = 0.7
-            #K3 = 1
-            
+        elif self.dynamics == 5:
+            K3 = 0.15  # interaction between i and j
             
             # velocity in transformed space
-            vxp = 0
-            vyp = 0
+            vxp = 0.2
+            vyp = 0.3
             
             tauix = 0
             tauiy = 0
             for robot in self.neighbors:
-                vxp += -K4 * ((self.xi.xp - robot.xi.xp) - (self.xid.xp - robot.xid.xp))
-                vyp += -K4 * ((self.xi.yp - robot.xi.yp) - (self.xid.yp - robot.xid.yp))
-                
-                # Collision avoidance
-                pijx = self.xi.xp - robot.xi.xp # Collision avoidance
-                pijy = self.xi.yp - robot.xi.yp # Collision avoidance
-                pij0 = (pijx**2 + pijy**2)**0.5
-                tauij0 = math.exp((dr - pij0)/B) - 1
-                if tauij0 > 0:
-                    tauix += tauij0 * pijx / pij0
-                    tauiy += tauij0 * pijy / pij0
+                pijx = self.xi.xp - robot.xi.xp
+                pijy = self.xi.yp - robot.xi.yp
+                pij0 = self.xi.distancepTo(robot.xi)
+                pijd0 = self.xid.distancepTo(robot.xid)
+                tauij0 = 2 * (pij0**4 - pijd0**4) / pij0**3
+                tauix += tauij0 * pijx / pij0
+                tauiy += tauij0 * pijy / pij0
+            #tauix, tauiy = saturate(tauix, tauiy, dxypMax)
+            vxp += -K3 * tauix
+            vyp += -K3 * tauiy
             
-            # Collision avoidance
-            vxp += K3 * tauix
-            vyp += K3 * tauiy
-            
-            # Velocity control toward goal
-            dxp = self.xi.xp - self.xid.xp
-            dyp = self.xi.yp - self.xid.yp
-            # Limit magnitude
-            dxyp = (dxp**2 + dyp**2)**0.5
-            if dxyp > dxypMax:
-                dxp = dxp / dxyp * dxypMax
-                dyp = dyp / dxyp * dxypMax
-            vxp += -K1 * dxp
-            vyp += -K1 * dyp
-            
-            # Take goal's speed into account
-            vxp += K2 * self.xid.vxp
-            vyp += K2 * self.xid.vyp
-            
-            kk = 1
-            theta = self.xi.theta
-            M11 = kk * math.sin(theta) + math.cos(theta)
-            M12 =-kk * math.cos(theta) + math.sin(theta)
-            M21 =-kk * math.sin(theta) + math.cos(theta)
-            M22 = kk * math.cos(theta) + math.sin(theta)
-            
-            v1 = M11 * vxp + M12 * vyp
-            v2 = M21 * vxp + M22 * vyp
-            
-            #v1 = 0.3
-            #v2 = 0.3
- 
-            #print(v1,v2,'model')
+            self.v1Desired = vxp
+            self.v2Desired = vyp
+            return vxp, vyp
         
         elif self.dynamics >= 15 and self.dynamics <= 18:
             # For e-puk dynamics
@@ -520,25 +393,6 @@ class Robot():
             self.scene.SENSOR_TYPE == "VPL16" and 
             self.VPL16_counter == 3 and self.recordData == True):
             self.data.add()
-#==============================================================================
-#         # Record data
-#         if (self.scene.vrepConnected and 
-#             self.scene.SENSOR_TYPE == "VPL16" and 
-#             self.VPL16_counter == 3 and self.recordData == True):
-#             if len(self.data.epi_starts) == 0:
-#                 self.data.epi_starts = np.append(self.data.epi_starts, True)
-#             else:
-#                 self.data.epi_starts = np.append(self.data.epi_starts, False)
-#             self.data.observations = np.append(self.data.observations, 
-#                                   self.pointCloud.getObservation(), 
-#                                   axis = 0) # option 1
-#             self.data.observations1 = np.append(self.data.observations1, 
-#                                   self.pointCloud.scanVector, axis = 0) # option 2
-#             self.data.obs2 = np.append(self.data.obs2, [[self.xi.x, self.xi.y, self.xi.theta]], axis = 0)
-#             self.data.actions = np.append(self.data.actions, [[v1, v2]], axis = 0)
-#==============================================================================
-            
-        
         
         # print('v = ', pow(pow(v1, 2) + pow(v2, 2), 0.5))
         
@@ -572,7 +426,7 @@ class Robot():
         p0Pix = self.scene.m2pix(p0)
         p3Pix = self.scene.m2pix(p3)
         if USE_CV2 == True:
-            if self.dynamics <= 1 or self.dynamics == 4:
+            if self.dynamics <= 1 or self.dynamics == 4 or self.dynamics == 5:
                 cv2.circle(image, tuple(p0Pix[0]), rPix, color)
             else:
                 cv2.line(image, tuple(p1Pix[0]), tuple(p2Pix[0]), color)

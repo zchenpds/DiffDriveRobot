@@ -22,7 +22,12 @@ class State():
         if self.robot == None:
             sys.exit("State: attribute robot is None")
         dt = self.robot.scene.dt
-        if self.robot.dynamics >= 10:
+        if self.robot.dynamics == 5:
+            v1, v2 = control()
+            self.x += v1 * dt
+            self.y += v2 * dt
+            self.theta = 0 # useless
+        elif self.robot.dynamics >= 10:
             l = self.robot.l
             v1, v2 = control()
             self.x += math.cos(self.theta) * dt / 2 * (v1 + v2)
@@ -30,14 +35,17 @@ class State():
             self.theta += 1 / l * dt * (v2 - v1)
             
             
-            
-            
     def transform(self):
         # For feedback linearization
-        c = self.robot.l / 2
-        self.xp = self.x + c * math.cos(self.theta)
-        self.yp = self.y + c * math.sin(self.theta)
-        self.thetap = self.theta
+        if self.robot.dynamics == 5:
+            self.xp = self.x
+            self.yp = self.y
+            self.theta = 0 # useless
+        elif self.robot.dynamics >= 10:
+            c = self.robot.l / 2
+            self.xp = self.x + c * math.cos(self.theta)
+            self.yp = self.y + c * math.sin(self.theta)
+            self.thetap = self.theta
         
     def distancepTo(self, other):
         dxp = self.xp - other.xp

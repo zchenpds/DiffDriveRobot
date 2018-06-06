@@ -94,14 +94,17 @@ class ScenePlot():
                     xid = self.sc.robots[i].xid.x
                     yid = self.sc.robots[i].xid.y
                     
-                    if self.sc.dynamics == 13:
-                        jList = range(0, 1)
-                    elif self.sc.dynamics == 14 or (self.sc.dynamics >= 16 and self.sc.dynamics <= 17):
+                    if self.sc.dynamics == 5:
+                        #jList = range(0, 1)
+                        jList = range(0, len(self.sc.robots))
+                    elif self.sc.dynamics >= 16 and self.sc.dynamics <= 17:
                         jList = range(0, len(self.sc.robots))
                     elif self.sc.dynamics == 18:
                         #lsd = self.sc.robots[i].listSortedDistance
                         #jList = [lsd[0][0],lsd[1][0]]
                         jList = range(0, len(self.sc.robots))
+                    else:
+                        raise Exception("Undefined robot dynamics for data recording", self.sc.dynamics)
                     for j in jList:
                         if self.sc.adjMatrix[i, j] == 0:
                             continue
@@ -113,7 +116,9 @@ class ScenePlot():
                         yjd = self.sc.robots[j].xid.y
                         
                         eji = np.array([xi - xj, yi - yj])
-                        if self.sc.dynamics == 17:
+                        if self.sc.dynamics == 5:
+                            ejid = np.array([xid - xjd, yid - yjd])
+                        elif self.sc.dynamics == 17:
                             ejid = np.array([xid - xjd, yid - yjd])
                         else:
                             ejid = self.sc.alpha
@@ -236,7 +241,59 @@ class ScenePlot():
                 plt.plot(self.sc.ts, error, '-', color = (0,0,0))
                 plt.xlabel('t (s)')
                 plt.ylabel('Center distance from goal (m)')
-
+        
+        elif type == 24: # Formation Error type 24: epsilon
+            if len(self.sc.robots) != 3:
+                raise Exception("Plot type 24 is valid only when the number of robots is 3.")
+            if self.sc.dynamics != 5:
+                raise Exception("Plot type 24 is valid only for dynamics 13.")
+            xi = 3 * [None]
+            xid = 3 * [None]
+            if not self.sc.ploted[type]:
+                for i in range(0, 3):
+                    xi[i] = self.sc.robots[i].xi
+                    xid[i] = self.sc.robots[i].xid
+                    
+                for i in range(0, 3):
+                    error = 0
+                    j1 = None
+                    for j in range(0, 3):
+                        if i == j:
+                            continue
+                        if j1 is None:
+                            j1 = j
+                        else:
+                            j2 = j
+                        xj = self.sc.robots[j].xi.x
+                        yj = self.sc.robots[j].xi.y
+                        xjd = self.sc.robots[j].xid.x
+                        yjd = self.sc.robots[j].xid.y
+                        
+                    errorij1 = xi[i].distancepTo(xi[j1]) - xid[i].distancepTo(xid[j1])
+                    errorij2 = xi[i].distancepTo(xi[j2]) - xid[i].distancepTo(xid[j2])
+                    errorj1j2 = xi[j1].distancepTo(xi[j2]) - xid[j1].distancepTo(xid[j2])
+                    ejid = xid[i].distancepTo(xid[j])
+                    epsilon = errorij1 + errorij2 - errorj1j2
+                    
+                    # If this is the first time this type of plot is drawn
+                    if i not in self.sc.ydict[type].keys():
+                        self.sc.ydict[type][i] = []
+                        self.sc.ydict2[type][i] = i # for legend
+                    self.sc.ydict[type][i].append(epsilon)
+            if self.sc.t > tf:
+                errors = self.sc.ydict[type]
+                legends = self.sc.ydict2[type]
+                curves = []
+                plt.figure(type)
+                for k in range(0, len(self.sc.ydict[type])):
+                    curve, = plt.plot(self.sc.ts, errors[k], '-', 
+                                      label = str(legends[k]))
+                    curves.append(curve)
+                if int(matplotlib.__version__[0]) == 2:
+                    plt.legend(handles = curves)
+                plt.xlabel('t (s)')
+                plt.ylabel('Formation Separation Error (m)')
+                        
         elif type == 3: # Formation Error type 3
             if not self.sc.ploted[type]:
                 for i in range(1, len(self.sc.robots)):
@@ -314,6 +371,10 @@ class ScenePlot():
             if self.sc.t > tf:
                 plt.figure(type)
                 curves = []
+                if self.sc.dynamics == 5:
+                    style = 3
+                else:
+                    style = 0
                 for i in range(len(self.sc.robots)):
                     c = self.getRobotColor(i)
                     curve, = plt.plot(self.sc.ydict2[type][i][:, 0], 
@@ -323,7 +384,7 @@ class ScenePlot():
                     for k in range(len(self.sc.tss)):
                         plt.plot(self.sc.ydict[type][i][k, 0], 
                                  self.sc.ydict[type][i][k, 1], 
-                                 marker=(3, 0, self.sc.ydict[type][i][k, 2]),
+                                 marker=(3, style, self.sc.ydict[type][i][k, 2]),
                                  markersize=20, linestyle='None',
                                  color=c, fillstyle="none")
                 if int(matplotlib.__version__[0]) == 2:
@@ -394,6 +455,8 @@ class ScenePlot():
                 j1 = 1
             elif self.sc.dynamics == 14 or (self.sc.dynamics >= 16 and self.sc.dynamics <= 18):
                 j1 = 0
+            else:
+                j1 = 0
             if not self.sc.ploted[type]:
                 for i in range(len(self.sc.robots)):
                     vDesired1 = self.sc.robots[i].v1Desired
@@ -408,10 +471,16 @@ class ScenePlot():
                 for i in range(j1, len(self.sc.robots)): # Show only the follower
                 #for i in range(len(self.sc.robots)): # Show both the follower and the leader
                     c = self.getRobotColor(i)
+                    if self.sc.dynamics  == 5:
+                        curve1Label = 'Action in x-axis'
+                        curve2Label = 'Action in y-axis'
+                    else:
+                        curve1Label = 'Left Wheel Velocity'
+                        curve2Label = 'Right Wheel Velocity'
                     curve1, = plt.plot(self.sc.ts, self.sc.ydict[type][i], ':', 
-                                      color = c, label = 'Left Wheel Velocity')
+                                      color = c, label = curve1Label)
                     curve2, = plt.plot(self.sc.ts, self.sc.ydict2[type][i], '--', 
-                                      color = c, label = 'Right Wheel Velocity')
+                                      color = c, label = curve2Label)
                 if int(matplotlib.__version__[0]) == 2:
                     plt.legend(handles = [curve1, curve2])
                 plt.xlabel('t (s)')

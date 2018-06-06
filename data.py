@@ -24,10 +24,8 @@ class Data():
             self.d['observations'] = np.zeros((0, pc.hPix * pc.wPix * 2), dtype = np.int8)
             self.d['observations2'] = np.zeros((0, 2), dtype = np.float32)
         self.d['observations1'] = np.zeros((0, pc.lenScanVector), dtype = np.float32)
-        if dynamics == 13:
-            self.d['obs2'] = np.zeros((0, 17), dtype = np.float32)
-        elif dynamics == 14:
-            self.d['obs2'] = np.zeros((0, 10), dtype = np.float32)
+        if dynamics == 5:
+            self.d['obs2'] = np.zeros((0, 2), dtype = np.float32)
         elif dynamics == 16:
             self.d['obs2'] = np.zeros((0, 2), dtype = np.float32)
         elif dynamics == 17:
@@ -120,38 +118,8 @@ class Data():
         self.d['observations1'] = np.append(self.d['observations1'], 
                               self.robot.pointCloud.scanVector, axis = 0) # option 2
         
-        if self.robot.scene.dynamics == 13:
-            followerXi = self.robot.xi
-            leaderXi = self.robot.leader.xi
-            followerXid = self.robot.xid
-            vLeader = self.robot.leader.getV1V2()
-            obs2Data = [[leaderXi.x, leaderXi.y, # 1, 2
-                        followerXi.x, followerXi.y,  # 3, 4
-                        leaderXi.x - followerXi.x, leaderXi.y - followerXi.y, # 5, 6
-                        followerXid.vx, followerXid.vy, # 7, 8
-                        leaderXi.theta, followerXi.theta, # 9, 10
-                        leaderXi.theta - followerXi.theta, # 11
-                        0.5*(vLeader[0, 0] + vLeader[0, 1]), #12 : mode = -1
-                        (followerXid.vx**2 + followerXid.vy**2)**0.5, #13: mode = -2
-                        followerXid.vx, followerXid.vy, #14, 15: mode = -3
-                        vLeader[0, 0], vLeader[0, 1] #16, 17: mode = -3
-                        ]]
-        elif self.robot.scene.dynamics == 14:
-            peer = self.robot
-            phii = math.atan2(peer.xid.y - peer.xi.y, peer.xid.x - peer.xi.x)
-            rhoi = ((peer.xid.x - peer.xi.x)**2 + (peer.xid.y - peer.xi.y)**2) ** 0.5
-            thetai = peer.xi.theta
-            psi = phii - thetai
-            if psi > math.pi:
-                psi -= 2 * math.pi
-            elif psi < -math.pi:
-                psi += 2 * math.pi
-                
-            obs2Data = [[peer.xid.vRef, rhoi, psi, # 1, 2, 3
-                         peer.xid.x - peer.xi.x, peer.xid.y - peer.xi.y,  # 4, 5
-                         peer.xid.x, peer.xid.y, # 6, 7
-                         peer.xi.x, peer.xi.y, # 8, 9
-                         thetai]] # 10 : mode = -11
+        if self.robot.scene.dynamics == 5:
+            pass
         elif self.robot.scene.dynamics == 16 or self.robot.scene.dynamics == 17:
             peer = self.robot
             psi = peer.xid.theta - peer.xi.theta
